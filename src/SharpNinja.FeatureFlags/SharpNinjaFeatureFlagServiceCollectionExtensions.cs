@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SharpNinja.FeatureFlags.Abstractions;
@@ -7,7 +8,7 @@ using SharpNinja.FeatureFlags.Evaluation;
 
 namespace SharpNinja.FeatureFlags;
 
-/// <summary>FR-4 TR-11 Phase 1 service registration extensions for SharpNinja Feature Flags.</summary>
+/// <summary>FR-1 FR-4 FR-8 TR-5 TR-7 TR-11 Phase 1 service registration extensions for SharpNinja Feature Flags.</summary>
 public static class SharpNinjaFeatureFlagServiceCollectionExtensions
 {
     /// <summary>Registers SharpNinja Feature Flags services from a manifest JSON payload.</summary>
@@ -28,14 +29,20 @@ public static class SharpNinjaFeatureFlagServiceCollectionExtensions
 
         services.AddSingleton(options);
         services.AddSingleton(manifest);
-        services.AddSingleton(static provider =>
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<SharpNinjaBufferedExposureEventSink>();
+        services.TryAddSingleton<ISharpNinjaExposureEventSink>(
+            static provider => provider.GetRequiredService<SharpNinjaBufferedExposureEventSink>());
+        services.TryAddSingleton<ISharpNinjaExposureEventBuffer>(
+            static provider => provider.GetRequiredService<SharpNinjaBufferedExposureEventSink>());
+        services.TryAddSingleton(static provider =>
         {
             ILogger<FeatureFlagEvaluator> logger =
                 provider.GetService<ILogger<FeatureFlagEvaluator>>() ?? NullLogger<FeatureFlagEvaluator>.Instance;
 
             return new FeatureFlagEvaluator(logger);
         });
-        services.AddSingleton<ISharpNinjaFeatureClient, SharpNinjaFeatureClient>();
+        services.TryAddSingleton<ISharpNinjaFeatureClient, SharpNinjaFeatureClient>();
 
         return services;
     }

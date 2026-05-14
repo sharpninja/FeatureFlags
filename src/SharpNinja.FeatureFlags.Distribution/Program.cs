@@ -1,18 +1,11 @@
+using SharpNinja.FeatureFlags.Distribution;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSharpNinjaFeatureFlagDistribution();
+
 var app = builder.Build();
 
-app.Run(HandleRequestAsync);
+app.MapSharpNinjaFeatureFlagDistributionEndpoints();
 
 app.Run();
-
-static Task HandleRequestAsync(HttpContext context)
-{
-    if (HttpMethods.IsGet(context.Request.Method) && context.Request.Path == "/")
-    {
-        context.Response.ContentType = "text/plain";
-        return context.Response.WriteAsync("SharpNinja Feature Flags Distribution", context.RequestAborted);
-    }
-
-    context.Response.StatusCode = StatusCodes.Status404NotFound;
-    return Task.CompletedTask;
-}

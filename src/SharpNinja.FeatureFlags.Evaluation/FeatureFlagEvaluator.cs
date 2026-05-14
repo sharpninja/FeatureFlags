@@ -94,8 +94,9 @@ public sealed class FeatureFlagEvaluator
         }
 
         EvaluationContext effectiveContext = context ?? EvaluationContext.Empty;
-        foreach (FeatureFlagRule rule in flag.Rules)
+        for (int ruleIndex = 0; ruleIndex < flag.Rules.Count; ruleIndex++)
         {
+            FeatureFlagRule rule = flag.Rules[ruleIndex];
             if (!RulePredicateMatcher.IsMatch(rule.When, effectiveContext))
             {
                 continue;
@@ -103,13 +104,14 @@ public sealed class FeatureFlagEvaluator
 
             if (TryConvertValue(rule.Value, out T ruleValue))
             {
-                return new EvaluationResult<T>(ruleValue, EvaluationReason.RuleMatch);
+                return new EvaluationResult<T>(ruleValue, EvaluationReason.RuleMatch, RuleIndex: ruleIndex);
             }
 
             return new EvaluationResult<T>(
                 defaultValue,
                 EvaluationReason.Error,
-                ErrorMessage: string.Concat("Feature flag '", key, "' rule value could not be converted."));
+                ErrorMessage: string.Concat("Feature flag '", key, "' rule value could not be converted."),
+                RuleIndex: ruleIndex);
         }
 
         if (TryConvertValue(flag.DefaultValue, out T manifestDefaultValue))

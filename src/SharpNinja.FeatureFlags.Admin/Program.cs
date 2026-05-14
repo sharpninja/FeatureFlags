@@ -1,18 +1,10 @@
+using SharpNinja.FeatureFlags.Admin;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSharpNinjaFeatureFlagsAdminRuntime();
+
 var app = builder.Build();
 
-app.Run(HandleRequestAsync);
+app.UseSharpNinjaFeatureFlagsAdminRuntime();
 
 app.Run();
-
-static Task HandleRequestAsync(HttpContext context)
-{
-    if (HttpMethods.IsGet(context.Request.Method) && context.Request.Path == "/")
-    {
-        context.Response.ContentType = "text/plain";
-        return context.Response.WriteAsync("SharpNinja Feature Flags Admin", context.RequestAborted);
-    }
-
-    context.Response.StatusCode = StatusCodes.Status404NotFound;
-    return Task.CompletedTask;
-}
