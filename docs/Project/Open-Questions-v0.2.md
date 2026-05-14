@@ -1,6 +1,6 @@
 ## 13. Open Questions for Iteration v0.2
 
-These are deliberately unresolved here; the Byrd Process expects refinement to occur as Implementation surfaces them.
+These are deliberately unresolved here unless explicitly marked resolved; the Byrd Process expects refinement to occur as Implementation surfaces them.
 
 What is the canonical list of Products planned for v1? This drives admin-plane RBAC modeling and the size of the bundled-default footprint.
 
@@ -17,6 +17,8 @@ Are the three v1 database providers (PostgreSQL, SQL Server, SQLite) the correct
 Is multi-tenant deployment in scope for v1? The `Tenant` column in the `Entities` table makes it cheap to support, but the admin-plane UX, RBAC, and key-isolation work to make multi-tenancy real is significant and may be a v2 concern.
 
 What is the long-term relationship between this repository's vendored CQRS copy and the upstream `sharpninja/McpServer` repository? Options for v0.2 onward: (a) accept permanent divergence and own the code outright; (b) periodic upstream-sync with backports for non-flag-specific improvements; (c) selective contribution of flag-agnostic adaptations back to McpServer while keeping flag-aware extensions exclusive to this repository. The choice affects how the adaptation delta is structured during Phase 6 discovery — option (c) requires the delta to clearly separate flag-aware from non-flag-aware changes from the first commit.
+
+Resolved 2026-05-14: choose option (a). This repository owns the CQRS fork permanently. The vendored CQRS code is maintained as SharpNinja feature-flag infrastructure, with no expected periodic upstream sync or contribution-back obligation to `sharpninja/McpServer`.
 
 ---
 
