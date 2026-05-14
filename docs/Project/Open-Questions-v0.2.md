@@ -18,7 +18,7 @@ Is multi-tenant deployment in scope for v1? The `Tenant` column in the `Entities
 
 What is the long-term relationship between this repository's vendored CQRS copy and the upstream `sharpninja/McpServer` repository? Options for v0.2 onward: (a) accept permanent divergence and own the code outright; (b) periodic upstream-sync with backports for non-flag-specific improvements; (c) selective contribution of flag-agnostic adaptations back to McpServer while keeping flag-aware extensions exclusive to this repository. The choice affects how the adaptation delta is structured during Phase 6 discovery — option (c) requires the delta to clearly separate flag-aware from non-flag-aware changes from the first commit.
 
-Resolved 2026-05-14: choose option (a). This repository owns the CQRS fork permanently. The vendored CQRS code is maintained as SharpNinja feature-flag infrastructure, with no expected periodic upstream sync or contribution-back obligation to `sharpninja/McpServer`.
+Resolved 2026-05-14: choose option (a). This repository owns the CQRS fork permanently. The vendored CQRS code is maintained as SharpNinja feature-flag infrastructure, with no expected periodic upstream sync or contribution-back obligation to `sharpninja/McpServer`. This repository's implementation is the forward path; `McpServer.Cqrs` will be deprecated in favor of `SharpNinja.FeatureFlags.Cqrs`.
 
 ---
 
