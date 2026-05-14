@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using SharpNinja.FeatureFlags.Abstractions;
 using Xunit;
 
@@ -25,10 +26,50 @@ public sealed class PublicApiConstructorTests
             + string.Join("; ", violations));
     }
 
-    /// <summary>Phase 4 migration discipline test scaffold.</summary>
-    [Fact(Skip = "Phase 4 enables this once migration assemblies contain EF Core migrations.")]
+    private static readonly Regex MigrationCallPattern = new(
+        @"\b(?<operation>CreateTable|DropTable|RenameTable|AddColumn|DropColumn|AlterColumn|CreateIndex|DropIndex|AddForeignKey|DropForeignKey)\s*\((?<arguments>.*?)\);",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
+
+    private static readonly Regex TableArgumentPattern = new(
+        @"\btable:\s*""(?<table>[^""]+)""",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex NameArgumentPattern = new(
+        @"\bname:\s*""(?<table>[^""]+)""",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    /// <summary>TR-11 migration files must keep each schema change isolated to one table.</summary>
+    [Fact]
     public void EachMigrationMutatesOnlyOneTable()
     {
+        var repositoryRoot = FindRepositoryRoot();
+        var migrationFiles = Directory.EnumerateFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => path.Contains($"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Where(path => !path.EndsWith(".Designer.cs", StringComparison.Ordinal))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        var violations = migrationFiles
+            .Select(path => new
+            {
+                Path = path,
+                Tables = MigrationCallPattern.Matches(File.ReadAllText(path))
+                    .Select(ResolveMutatedTable)
+                    .Where(table => table is not null)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Order(StringComparer.OrdinalIgnoreCase)
+                    .ToArray(),
+            })
+            .Where(candidate => candidate.Tables.Length > 1)
+            .Select(candidate =>
+                $"{Path.GetRelativePath(repositoryRoot, candidate.Path)} mutates multiple tables: {string.Join(", ", candidate.Tables)}")
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.True(
+            violations.Length == 0,
+            "Each EF migration must mutate only one table. Violations: " + string.Join("; ", violations));
     }
 
     private static IEnumerable<Type> LoadProductionTypes()
@@ -86,4 +127,33 @@ public sealed class PublicApiConstructorTests
     private static bool IsRecord(Type type)
         => type.GetMethod("<Clone>$", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) is not null
            || type.GetMethod("PrintMembers", BindingFlags.NonPublic | BindingFlags.Instance) is not null;
+
+    private static string? ResolveMutatedTable(Match migrationCall)
+    {
+        string arguments = migrationCall.Groups["arguments"].Value;
+        Match tableArgument = TableArgumentPattern.Match(arguments);
+        if (tableArgument.Success)
+        {
+            return tableArgument.Groups["table"].Value;
+        }
+
+        Match nameArgument = NameArgumentPattern.Match(arguments);
+        return nameArgument.Success ? nameArgument.Groups["table"].Value : null;
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "sharpninja-feature-flags.sln")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
+    }
 }

@@ -1,0 +1,93 @@
+name: sharpninja-featureflags
+
+services:
+  admin:
+    build:
+      context: .
+      dockerfile: src/SharpNinja.FeatureFlags.Admin/Dockerfile
+    image: sharpninja-featureflags-admin:dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:-featureflags_dev_password}
+      ConnectionStrings__SqlServer: Server=sqlserver,1433;Database=FeatureFlags;User Id=sa;Password=${FEATUREFLAGS_SQLSERVER_PASSWORD:-SharpNinja!Passw0rd};Encrypt=True;TrustServerCertificate=True
+      FeatureFlags__Products__0: TruckMate
+      FeatureFlags__Products__1: DriverMate
+      FeatureFlags__ReleaseLineage__Mode: SemVerChannelBuild
+      FeatureFlags__Environments__AllowCustom: "true"
+      FeatureFlags__ExposureRetention__UserDefined: "true"
+      FeatureFlags__Tenancy__Mode: MultiTenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sqlserver:
+        condition: service_started
+    ports:
+      - "18080:8080"
+    networks:
+      - featureflags
+
+  distribution:
+    build:
+      context: .
+      dockerfile: src/SharpNinja.FeatureFlags.Distribution/Dockerfile
+    image: sharpninja-featureflags-distribution:dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:-featureflags_dev_password}
+      ConnectionStrings__SqlServer: Server=sqlserver,1433;Database=FeatureFlags;User Id=sa;Password=${FEATUREFLAGS_SQLSERVER_PASSWORD:-SharpNinja!Passw0rd};Encrypt=True;TrustServerCertificate=True
+      FeatureFlags__Products__0: TruckMate
+      FeatureFlags__Products__1: DriverMate
+      FeatureFlags__ReleaseLineage__Mode: SemVerChannelBuild
+      FeatureFlags__Environments__AllowCustom: "true"
+      FeatureFlags__ExposureRetention__UserDefined: "true"
+      FeatureFlags__Tenancy__Mode: MultiTenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+      sqlserver:
+        condition: service_started
+    ports:
+      - "18081:8080"
+    networks:
+      - featureflags
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: featureflags
+      POSTGRES_USER: featureflags
+      POSTGRES_PASSWORD: ${FEATUREFLAGS_POSTGRES_PASSWORD:-featureflags_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U featureflags -d featureflags"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "15432:5432"
+    volumes:
+      - featureflags-postgres:/var/lib/postgresql/data
+    networks:
+      - featureflags
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${FEATUREFLAGS_SQLSERVER_PASSWORD:-SharpNinja!Passw0rd}
+    ports:
+      - "11433:1433"
+    volumes:
+      - featureflags-sqlserver:/var/opt/mssql
+    networks:
+      - featureflags
+
+networks:
+  featureflags:
+    name: sharpninja-featureflags
+
+volumes:
+  featureflags-postgres:
+  featureflags-sqlserver:

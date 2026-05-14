@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -16,6 +17,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data\SharpNinja.FeatureFlags.Admin.Data.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.Postgres\SharpNinja.FeatureFlags.Admin.Data.Postgres.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.SqlServer\SharpNinja.FeatureFlags.Admin.Data.SqlServer.csproj" />
   </ItemGroup>
 </Project>
 
