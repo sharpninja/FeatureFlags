@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="ByrdFeatureFlagsScaffold" BeforeTargets="CoreCompile">
+    <Message Importance="Low" Text="Byrd.FeatureFlags Phase 0 scaffold build conventions loaded." />
+  </Target>
+</Project>

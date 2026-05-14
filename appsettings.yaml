@@ -1,0 +1,23 @@
+FeatureFlags:
+  Products: []
+  Environments:
+    - dev
+    - staging
+    - production
+  Manifest:
+    BundledDefaultResourceName: ""
+    RefreshIntervalSeconds: 300
+    KillSwitchRefreshIntervalSeconds: 30
+  Distribution:
+    BaseUrl: ""
+    ProductScopedApiKeyName: ""
+  Telemetry:
+    ExposureUploadIntervalSeconds: 30
+Admin:
+  Authentication:
+    Provider: ""
+  Data:
+    Provider: sqlite
+    ConnectionString: ""
+Cli:
+  DefaultEnvironment: dev

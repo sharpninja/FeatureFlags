@@ -1,0 +1,20 @@
+name: build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: ./build.ps1 Compile
+      - run: ./build.ps1 Test
+      - run: ./build.ps1 ValidateConfig
+      - run: ./build.ps1 ValidateTraceability

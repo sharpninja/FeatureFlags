@@ -1,0 +1,10 @@
+mode: ContinuousDelivery
+branches:
+  main:
+    regex: ^main$
+    increment: Patch
+  develop:
+    regex: ^develop$
+    increment: Minor
+ignore:
+  sha: []
