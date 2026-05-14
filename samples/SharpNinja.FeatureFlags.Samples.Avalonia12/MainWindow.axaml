@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:SharpNinja.FeatureFlags.Samples.Avalonia12"
+        x:Class="SharpNinja.FeatureFlags.Samples.Avalonia12.MainWindow"
+        x:DataType="local:MainWindowViewModel"
+        Title="SharpNinja Feature Flags Avalonia 12 Sample"
+        Width="760"
+        Height="420"
+        MinWidth="640"
+        MinHeight="320">
+  <ScrollViewer>
+    <StackPanel Margin="24" Spacing="12">
+      <TextBlock Text="SharpNinja Feature Flags"
+                 FontSize="24"
+                 FontWeight="SemiBold" />
+      <TextBlock Text="Avalonia 12 deterministic SDK scenarios"
+                 FontSize="14" />
+      <ItemsControl ItemsSource="{Binding ScenarioOutputs}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="local:AvaloniaSampleScenarioOutput">
+            <Border BorderBrush="#D0D7DE"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="12"
+                    Margin="0,0,0,8">
+              <StackPanel Spacing="4">
+                <TextBlock Text="{Binding DisplayText}"
+                           FontSize="16"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ResolvedValue}" />
+                <TextBlock Text="{Binding Reason}" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</Window>
