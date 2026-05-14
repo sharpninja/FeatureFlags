@@ -1,0 +1,28 @@
+<Project>
+  <PropertyGroup>
+    <SharpNinjaFeatureFlagsManifest Condition="'$(SharpNinjaFeatureFlagsManifest)' == ''">$(MSBuildProjectDirectory)\flags\flags.json</SharpNinjaFeatureFlagsManifest>
+    <SharpNinjaFeatureFlagsValidateOnBuild Condition="'$(SharpNinjaFeatureFlagsValidateOnBuild)' == ''">true</SharpNinjaFeatureFlagsValidateOnBuild>
+    <SharpNinjaFeatureFlagsCliCommand Condition="'$(SharpNinjaFeatureFlagsCliCommand)' == ''">flagctl</SharpNinjaFeatureFlagsCliCommand>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(SharpNinjaFeatureFlagsManifest)')">
+    <AdditionalFiles Include="$(SharpNinjaFeatureFlagsManifest)" />
+    <EmbeddedResource Include="$(SharpNinjaFeatureFlagsManifest)" LogicalName="SharpNinja.FeatureFlags.BundledManifest.json" />
+  </ItemGroup>
+
+  <Target Name="ValidateSharpNinjaFeatureFlagBuildProperties"
+          BeforeTargets="CoreCompile"
+          Condition="'$(SharpNinjaFeatureFlagsValidateOnBuild)' == 'true' and Exists('$(SharpNinjaFeatureFlagsManifest)')">
+    <Error Condition="'$(ProductId)' == ''"
+           Text="SharpNinja Feature Flags requires the ProductId MSBuild property when a feature-flag manifest is present." />
+    <Error Condition="'$(ReleaseId)' == ''"
+           Text="SharpNinja Feature Flags requires the ReleaseId MSBuild property when a feature-flag manifest is present." />
+  </Target>
+
+  <Target Name="ValidateSharpNinjaFeatureFlagManifest"
+          DependsOnTargets="ValidateSharpNinjaFeatureFlagBuildProperties"
+          BeforeTargets="CoreCompile"
+          Condition="'$(SharpNinjaFeatureFlagsValidateOnBuild)' == 'true' and Exists('$(SharpNinjaFeatureFlagsManifest)')">
+    <Exec Command="&quot;$(SharpNinjaFeatureFlagsCliCommand)&quot; validate &quot;$(SharpNinjaFeatureFlagsManifest)&quot;" />
+  </Target>
+</Project>

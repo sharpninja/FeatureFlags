@@ -13,7 +13,7 @@ sealed class Build : NukeBuild
     [Parameter("Build configuration")]
     readonly string Configuration = "Release";
 
-    static AbsolutePath Solution => RootDirectory / "byrd-feature-flags.sln";
+    static AbsolutePath Solution => RootDirectory / "sharpninja-feature-flags.sln";
 
     /// <summary>Compiles the solution.</summary>
     Target Compile => _ => _

@@ -9,4 +9,4 @@ and this project adheres to semantic versioning once the release lineage questio
 
 ### Added
 
-- Phase 0 repository scaffold for the Byrd feature flag ecosystem.
+- Phase 0 repository scaffold for the SharpNinja feature flag ecosystem.

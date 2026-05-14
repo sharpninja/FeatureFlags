@@ -15,19 +15,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Abstractions\Byrd.FeatureFlags.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags\Byrd.FeatureFlags.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Evaluation\Byrd.FeatureFlags.Evaluation.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Manifest\Byrd.FeatureFlags.Manifest.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Distribution\Byrd.FeatureFlags.Distribution.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Admin\Byrd.FeatureFlags.Admin.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Admin.Data\Byrd.FeatureFlags.Admin.Data.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Admin.Data.Postgres\Byrd.FeatureFlags.Admin.Data.Postgres.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Admin.Data.SqlServer\Byrd.FeatureFlags.Admin.Data.SqlServer.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Admin.Data.Sqlite\Byrd.FeatureFlags.Admin.Data.Sqlite.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Cli\Byrd.FeatureFlags.Cli.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Build\Byrd.FeatureFlags.Build.csproj" />
-    <ProjectReference Include="..\..\src\Byrd.FeatureFlags.Cqrs\Byrd.FeatureFlags.Cqrs.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Abstractions\SharpNinja.FeatureFlags.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags\SharpNinja.FeatureFlags.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Evaluation\SharpNinja.FeatureFlags.Evaluation.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Manifest\SharpNinja.FeatureFlags.Manifest.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Distribution\SharpNinja.FeatureFlags.Distribution.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin\SharpNinja.FeatureFlags.Admin.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data\SharpNinja.FeatureFlags.Admin.Data.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.Postgres\SharpNinja.FeatureFlags.Admin.Data.Postgres.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.SqlServer\SharpNinja.FeatureFlags.Admin.Data.SqlServer.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.Sqlite\SharpNinja.FeatureFlags.Admin.Data.Sqlite.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Cli\SharpNinja.FeatureFlags.Cli.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Build\SharpNinja.FeatureFlags.Build.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Cqrs\SharpNinja.FeatureFlags.Cqrs.csproj" />
   </ItemGroup>
 </Project>
 

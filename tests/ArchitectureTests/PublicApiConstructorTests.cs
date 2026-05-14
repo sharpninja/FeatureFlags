@@ -1,5 +1,5 @@
 using System.Reflection;
-using Byrd.FeatureFlags.Abstractions;
+using SharpNinja.FeatureFlags.Abstractions;
 using Xunit;
 
 namespace ArchitectureTests;
@@ -33,12 +33,12 @@ public sealed class PublicApiConstructorTests
 
     private static IEnumerable<Type> LoadProductionTypes()
     {
-        _ = typeof(IByrdFeatureClient).Assembly;
+        _ = typeof(ISharpNinjaFeatureClient).Assembly;
         var baseDirectory = AppContext.BaseDirectory;
-        foreach (var path in Directory.EnumerateFiles(baseDirectory, "Byrd.FeatureFlags*.dll"))
+        foreach (var path in Directory.EnumerateFiles(baseDirectory, "SharpNinja.FeatureFlags*.dll"))
         {
             var name = Path.GetFileNameWithoutExtension(path);
-            if (name.Contains(".Tests", StringComparison.Ordinal) || name == "Byrd.FeatureFlags.Build")
+            if (name.Contains(".Tests", StringComparison.Ordinal) || name == "SharpNinja.FeatureFlags.Build")
             {
                 continue;
             }
@@ -47,7 +47,7 @@ public sealed class PublicApiConstructorTests
         }
 
         return AppDomain.CurrentDomain.GetAssemblies()
-            .Where(assembly => assembly.GetName().Name?.StartsWith("Byrd.FeatureFlags", StringComparison.Ordinal) == true)
+            .Where(assembly => assembly.GetName().Name?.StartsWith("SharpNinja.FeatureFlags", StringComparison.Ordinal) == true)
             .Where(assembly => assembly.GetName().Name?.Contains(".Tests", StringComparison.Ordinal) != true)
             .SelectMany(assembly => assembly.GetExportedTypes());
     }
