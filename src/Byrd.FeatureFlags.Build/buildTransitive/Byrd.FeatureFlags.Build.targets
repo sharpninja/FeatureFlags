@@ -1,0 +1,28 @@
+<Project>
+  <PropertyGroup>
+    <ByrdFeatureFlagsManifest Condition="'$(ByrdFeatureFlagsManifest)' == ''">$(MSBuildProjectDirectory)\flags\flags.json</ByrdFeatureFlagsManifest>
+    <ByrdFeatureFlagsValidateOnBuild Condition="'$(ByrdFeatureFlagsValidateOnBuild)' == ''">true</ByrdFeatureFlagsValidateOnBuild>
+    <ByrdFeatureFlagsCliCommand Condition="'$(ByrdFeatureFlagsCliCommand)' == ''">flagctl</ByrdFeatureFlagsCliCommand>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(ByrdFeatureFlagsManifest)')">
+    <AdditionalFiles Include="$(ByrdFeatureFlagsManifest)" />
+    <EmbeddedResource Include="$(ByrdFeatureFlagsManifest)" LogicalName="Byrd.FeatureFlags.BundledManifest.json" />
+  </ItemGroup>
+
+  <Target Name="ValidateByrdFeatureFlagBuildProperties"
+          BeforeTargets="CoreCompile"
+          Condition="'$(ByrdFeatureFlagsValidateOnBuild)' == 'true' and Exists('$(ByrdFeatureFlagsManifest)')">
+    <Error Condition="'$(ProductId)' == ''"
+           Text="Byrd Feature Flags requires the ProductId MSBuild property when a feature-flag manifest is present." />
+    <Error Condition="'$(ReleaseId)' == ''"
+           Text="Byrd Feature Flags requires the ReleaseId MSBuild property when a feature-flag manifest is present." />
+  </Target>
+
+  <Target Name="ValidateByrdFeatureFlagManifest"
+          DependsOnTargets="ValidateByrdFeatureFlagBuildProperties"
+          BeforeTargets="CoreCompile"
+          Condition="'$(ByrdFeatureFlagsValidateOnBuild)' == 'true' and Exists('$(ByrdFeatureFlagsManifest)')">
+    <Exec Command="&quot;$(ByrdFeatureFlagsCliCommand)&quot; validate &quot;$(ByrdFeatureFlagsManifest)&quot;" />
+  </Target>
+</Project>

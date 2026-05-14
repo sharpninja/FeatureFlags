@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Byrd.FeatureFlags.Abstractions\Byrd.FeatureFlags.Abstractions.csproj" />
+    <ProjectReference Include="..\Byrd.FeatureFlags.Manifest\Byrd.FeatureFlags.Manifest.csproj" />
   </ItemGroup>
 
   <ItemGroup>

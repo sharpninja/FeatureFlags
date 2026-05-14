@@ -7,10 +7,20 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Byrd.FeatureFlags.Abstractions\Byrd.FeatureFlags.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="buildTransitive\Byrd.FeatureFlags.Build.targets"
+          Pack="true"
+          PackagePath="buildTransitive\Byrd.FeatureFlags.Build.targets" />
+    <None Include="..\..\README.md"
+          Pack="true"
+          PackagePath="README.md" />
   </ItemGroup>
 
   <ItemGroup>
