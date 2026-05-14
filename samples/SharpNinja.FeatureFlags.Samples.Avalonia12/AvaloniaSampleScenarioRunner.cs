@@ -4,7 +4,7 @@ using SharpNinja.FeatureFlags.Abstractions.Options;
 
 namespace SharpNinja.FeatureFlags.Samples.Avalonia12;
 
-/// <summary>Runs the deterministic Avalonia 12 sample feature flag scenarios for tests and UI rendering.</summary>
+/// <summary>Runs TEST-AVALONIA-SAMPLE-001 Avalonia 12 feature flag scenarios for tests and UI rendering.</summary>
 public static class AvaloniaSampleScenarioRunner
 {
     private const string DashboardEnabledFeatureKey = "dashboard.enabled";
@@ -52,7 +52,7 @@ public static class AvaloniaSampleScenarioRunner
         }
         """;
 
-    /// <summary>Gets the actual deterministic outputs for all Project x Feature scenarios.</summary>
+    /// <summary>Gets the TEST-AVALONIA-SAMPLE-001 outputs for all project and feature scenarios.</summary>
     /// <returns>All four scenario outputs in project then feature order.</returns>
     public static IReadOnlyList<AvaloniaSampleScenarioOutput> GetOutputs()
     {
@@ -92,7 +92,7 @@ public static class AvaloniaSampleScenarioRunner
         return outputs;
     }
 
-    /// <summary>Gets the expected deterministic output snapshots for integration tests.</summary>
+    /// <summary>Gets the expected TEST-AVALONIA-SAMPLE-001 output snapshots for integration tests.</summary>
     /// <returns>All four expected outputs in project then feature order.</returns>
     public static IReadOnlyList<AvaloniaSampleScenarioOutput> GetExpectedOutputs() =>
     [
@@ -165,7 +165,7 @@ public static class AvaloniaSampleScenarioRunner
     }
 }
 
-/// <summary>Stable output contract for the Avalonia 12 sample integration tests.</summary>
+/// <summary>Stable TEST-AVALONIA-SAMPLE-001 output contract for Avalonia 12 sample integration tests.</summary>
 /// <param name="ProjectId">Project identifier evaluated by the scenario.</param>
 /// <param name="FeatureKey">Feature flag key evaluated by the scenario.</param>
 /// <param name="DisplayText">Visible text rendered by the sample UI.</param>

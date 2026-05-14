@@ -2,10 +2,10 @@ using Avalonia.Controls;
 
 namespace SharpNinja.FeatureFlags.Samples.Avalonia12;
 
-/// <summary>Main window that renders the deterministic feature flag scenario outputs.</summary>
+/// <summary>Main window that renders TEST-AVALONIA-SAMPLE-001 feature flag scenario outputs.</summary>
 public sealed partial class MainWindow : Window
 {
-    /// <summary>Creates the main sample window.</summary>
+    /// <summary>Creates the TEST-AVALONIA-SAMPLE-001 sample window.</summary>
     public MainWindow()
     {
         InitializeComponent();

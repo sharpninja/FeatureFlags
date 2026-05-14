@@ -1,6 +1,7 @@
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
+using System.Text.RegularExpressions;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 /// <summary>Build entrypoint for Phase 0 repository validation.</summary>
@@ -14,6 +15,14 @@ sealed class Build : NukeBuild
     readonly string Configuration = "Release";
 
     static AbsolutePath Solution => RootDirectory / "sharpninja-feature-flags.sln";
+
+    static readonly Regex PublicDeclarationPattern = new(
+        @"^\s*public\s+(?:sealed\s+|static\s+|abstract\s+|partial\s+|readonly\s+)*(?:class|record|interface|enum|struct)\s+",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+
+    static readonly Regex RequirementIdPattern = new(
+        @"\b(?:(?:FR|TR)-\d+|TEST-[A-Z0-9-]+)\b",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     /// <summary>Compiles the solution.</summary>
     Target Compile => _ => _
@@ -35,8 +44,58 @@ sealed class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(() => Serilog.Log.Information("No validation rules yet."));
 
-    /// <summary>Placeholder traceability validation target for Phase 0.</summary>
+    /// <summary>Validates implementation source files carry requirement traceability identifiers.</summary>
     Target ValidateTraceability => _ => _
         .DependsOn(Compile)
-        .Executes(() => Serilog.Log.Information("No validation rules yet."));
+        .Executes(ValidateTraceabilitySummaries);
+
+    static void ValidateTraceabilitySummaries()
+    {
+        string[] roots =
+        [
+            RootDirectory / "src",
+            RootDirectory / "samples",
+        ];
+
+        List<string> violations = [];
+        int checkedFiles = 0;
+
+        foreach (string root in roots.Where(Directory.Exists))
+        {
+            foreach (string file in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+            {
+                if (IsGeneratedOutput(file))
+                {
+                    continue;
+                }
+
+                string source = File.ReadAllText(file);
+                if (!PublicDeclarationPattern.IsMatch(source))
+                {
+                    continue;
+                }
+
+                checkedFiles++;
+                if (!RequirementIdPattern.IsMatch(source))
+                {
+                    violations.Add(Path.GetRelativePath(RootDirectory, file));
+                }
+            }
+        }
+
+        if (violations.Count > 0)
+        {
+            throw new InvalidOperationException(
+                string.Concat(
+                    "Traceability validation failed. Public implementation files must include an FR-*, TR-*, or TEST-* identifier in XML documentation:",
+                    Environment.NewLine,
+                    string.Join(Environment.NewLine, violations.Order(StringComparer.Ordinal).Select(path => string.Concat(" - ", path)))));
+        }
+
+        Serilog.Log.Information("Traceability validation passed for {FileCount} source files.", checkedFiles);
+    }
+
+    static bool IsGeneratedOutput(string file) =>
+        file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
+        || file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase);
 }
