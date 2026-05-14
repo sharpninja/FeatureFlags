@@ -4,7 +4,7 @@ Seeded from `docs/Feature-Flag-Ecosystem-Planning-v0.1.md`.
 
 ## **TR-1 — Target frameworks.**
 
-**TR-1 — Target frameworks.** SDK targets `net8.0`, `net8.0-android`, `net8.0-ios`, `net8.0-maccatalyst`, `net8.0-windows10.0.19041.0`, and plain `net8.0` for Linux. Long-term support framework only; no .NET Framework support.
+**TR-1 — Target frameworks.** SDK targets `net10.0`, `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, `net10.0-windows10.0.19041.0`, and plain `net10.0` for Linux. Long-term support framework only; no .NET Framework support.
 
 ## **TR-2 — AOT and trim safety.**
 
