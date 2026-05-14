@@ -5,4 +5,10 @@ public static class SharpNinjaDistributionHeaders
 {
     /// <summary>TR-9 v1 header name used for product-scoped Distribution API keys.</summary>
     public const string ProductApiKeyHeaderName = "X-SharpNinja-Api-Key";
+
+    /// <summary>TR-9 v1 header name used for opaque device-attestation tokens.</summary>
+    public const string DeviceAttestationTokenHeaderName = "X-SharpNinja-Device-Attestation";
+
+    /// <summary>TR-9 v1 header name used to identify the attestation platform or provider.</summary>
+    public const string DevicePlatformHeaderName = "X-SharpNinja-Device-Platform";
 }

@@ -44,7 +44,7 @@ Seeded from `docs/Feature-Flag-Ecosystem-Planning-v0.1.md`.
 
 ## **FR-11 — Multi-environment.**
 
-**FR-11 — Multi-environment.** The admin plane shall support at least dev / staging / production environments per the SharpNinja deployment model. Promotion between environments shall be an explicit, audited action.
+**FR-11 — Multi-environment.** The admin plane shall support built-in development / staging / production environments plus customer-defined custom environments per the SharpNinja deployment model. Promotion between environments shall be an explicit, audited action.
 
 ## **FR-12 — Schema validation in CI.**
 

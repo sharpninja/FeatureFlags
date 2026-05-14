@@ -24,6 +24,12 @@ public sealed class FeatureFlagEvaluator
             new EventId(3, nameof(TypeMismatch)),
             "Feature flag '{FeatureFlagKey}' type '{FeatureFlagType}' is incompatible with requested type '{RequestedType}'.");
 
+    private static readonly Action<ILogger, string, int, Exception?> RuleEvaluationFailed =
+        LoggerMessage.Define<string, int>(
+            LogLevel.Debug,
+            new EventId(4, nameof(RuleEvaluationFailed)),
+            "Feature flag '{FeatureFlagKey}' rule {RuleIndex} failed predicate evaluation and was skipped.");
+
     private readonly ILogger<FeatureFlagEvaluator> _logger;
 
     /// <summary>Creates a feature flag evaluator.</summary>
@@ -97,7 +103,23 @@ public sealed class FeatureFlagEvaluator
         for (int ruleIndex = 0; ruleIndex < flag.Rules.Count; ruleIndex++)
         {
             FeatureFlagRule rule = flag.Rules[ruleIndex];
-            if (!RulePredicateMatcher.IsMatch(rule.When, effectiveContext))
+            bool isMatch;
+            try
+            {
+                isMatch = RulePredicateMatcher.IsMatch(
+                    rule,
+                    effectiveContext,
+                    manifest.ProductId,
+                    manifest.ReleaseId,
+                    flag.Key);
+            }
+            catch (Exception exception) when (exception is RulePredicateEvaluationException or FormatException)
+            {
+                RuleEvaluationFailed(_logger, key, ruleIndex, exception);
+                continue;
+            }
+
+            if (!isMatch)
             {
                 continue;
             }

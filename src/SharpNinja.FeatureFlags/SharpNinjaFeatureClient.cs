@@ -15,31 +15,25 @@ public sealed class SharpNinjaFeatureClient : ISharpNinjaFeatureClient
 
     private readonly FeatureFlagEvaluator evaluator;
     private readonly ISharpNinjaExposureEventSink exposureEventSink;
-    private readonly FeatureFlagManifest manifest;
+    private readonly ISharpNinjaActiveManifestStore activeManifestStore;
     private readonly SharpNinjaFeatureFlagOptions options;
     private readonly TimeProvider timeProvider;
 
-    /// <summary>Creates a new SDK client from DI-managed collaborators.</summary>
-    /// <param name="evaluator">Feature flag evaluator.</param>
-    /// <param name="manifest">Parsed feature flag manifest.</param>
-    /// <param name="options">SDK feature flag options.</param>
-    /// <param name="exposureEventSink">Exposure event sink.</param>
-    /// <param name="timeProvider">Time provider for exposure timestamps.</param>
-    public SharpNinjaFeatureClient(
+    internal SharpNinjaFeatureClient(
         FeatureFlagEvaluator evaluator,
-        FeatureFlagManifest manifest,
+        ISharpNinjaActiveManifestStore activeManifestStore,
         SharpNinjaFeatureFlagOptions options,
         ISharpNinjaExposureEventSink exposureEventSink,
         TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(evaluator);
-        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentNullException.ThrowIfNull(activeManifestStore);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(exposureEventSink);
         ArgumentNullException.ThrowIfNull(timeProvider);
 
         this.evaluator = evaluator;
-        this.manifest = manifest;
+        this.activeManifestStore = activeManifestStore;
         this.options = options;
         this.exposureEventSink = exposureEventSink;
         this.timeProvider = timeProvider;
@@ -51,7 +45,12 @@ public sealed class SharpNinjaFeatureClient : ISharpNinjaFeatureClient
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
         EvaluationContext effectiveContext = BuildEffectiveContext(context);
-        EvaluationResult<T> result = evaluator.Evaluate(manifest, options.ProductId, key, defaultValue, effectiveContext);
+        EvaluationResult<T> result = evaluator.Evaluate(
+            activeManifestStore.CurrentManifest,
+            options.ProductId,
+            key,
+            defaultValue,
+            effectiveContext);
 
         exposureEventSink.Record(new SharpNinjaExposureEvent(
             key,

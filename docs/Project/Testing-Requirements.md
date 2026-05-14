@@ -10,5 +10,5 @@ Per the Byrd Process, TDD drives Implementation. The Testing Requirements artifa
 
 **Cross-platform validation** shall run the integration test suite on a CI matrix covering all five platforms via .NET MAUI workloads and (for Linux) plain .NET 10.
 
-**Human validation** shall cover: admin-plane workflow usability with at least three operators; verification that a non-engineer can read and understand a rule before it is published; verification that a published kill-switch reaches a sample app on each platform within the documented SLA.
+**Human validation** shall cover: admin-plane workflow usability with at least three operators; verification that a non-engineer can read and understand a rule before it is published; verification that a published kill-switch reaches a sample app on each platform within the documented SLA. The v1 capture artifact is `docs/Project/Evidence/HumanValidation-v1.md`.
 

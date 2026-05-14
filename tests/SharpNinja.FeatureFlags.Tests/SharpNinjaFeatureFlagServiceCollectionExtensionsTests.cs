@@ -23,6 +23,10 @@ public sealed class SharpNinjaFeatureFlagServiceCollectionExtensionsTests
         Assert.NotNull(provider.GetRequiredService<FeatureFlagManifest>());
         Assert.NotNull(provider.GetRequiredService<FeatureFlagEvaluator>());
         Assert.IsType<SharpNinjaFeatureClient>(provider.GetRequiredService<ISharpNinjaFeatureClient>());
+        Assert.NotNull(provider.GetRequiredService<ISharpNinjaFeatureFlagAdmin>());
+        Assert.NotNull(provider.GetRequiredService<ISharpNinjaRemoteFetchCoordinator>());
+        Assert.NotNull(provider.GetRequiredService<ISharpNinjaExposureOutbox>());
+        Assert.NotNull(provider.GetRequiredService<ISharpNinjaExposureUploadCoordinator>());
     }
 
     /// <summary>The interface client evaluates flags synchronously through the parsed manifest.</summary>
@@ -53,10 +57,19 @@ public sealed class SharpNinjaFeatureFlagServiceCollectionExtensionsTests
     [Fact]
     public void InterfaceClientUsesConfiguredProductId()
     {
-        SharpNinjaFeatureFlagOptions options = CreateOptions() with { ProductId = "dispatch" };
+        SharpNinjaFeatureFlagOptions options = CreateOptions() with
+        {
+            ProductId = "dispatch",
+            SupportedProductIds = ["truckmate", "dispatch"],
+        };
 
         using ServiceProvider provider = new ServiceCollection()
-            .AddSharpNinjaFeatureFlags(options, ManifestJson)
+            .AddSharpNinjaFeatureFlags(
+                options,
+                ManifestJson.Replace(
+                    "\"productId\": \"truckmate\"",
+                    "\"productId\": \"dispatch\"",
+                    StringComparison.Ordinal))
             .BuildServiceProvider();
         ISharpNinjaFeatureClient client = provider.GetRequiredService<ISharpNinjaFeatureClient>();
 
@@ -156,10 +169,122 @@ public sealed class SharpNinjaFeatureFlagServiceCollectionExtensionsTests
         Assert.Empty(provider.GetRequiredService<ISharpNinjaExposureEventBuffer>().Snapshot());
     }
 
+    /// <summary>FR-3 FR-7 TR-6 TR-10 TR-11 verifies forced refresh activates a verified remote manifest and raises the admin event.</summary>
+    [Fact]
+    public async Task AdminForceRefreshActivatesRemoteManifestAndRaisesEvent()
+    {
+        SharpNinjaFeatureFlagOptions options = CreateOptions();
+        var remoteClient = new StubRemoteManifestClient(CreateEnvelope(RemoteManifestJson));
+
+        using ServiceProvider provider = CreateProvider(
+            options,
+            services => services.AddSingleton<ISharpNinjaRemoteManifestClient>(remoteClient));
+        ISharpNinjaFeatureFlagAdmin admin = provider.GetRequiredService<ISharpNinjaFeatureFlagAdmin>();
+        ManifestUpdatedEventArgs? eventArgs = null;
+        admin.ManifestUpdated += (_, args) => eventArgs = args;
+
+        await admin.ForceRefreshAsync();
+        DiagnosticSnapshot diagnostics = admin.GetDiagnostics();
+        EvaluationResult<bool> result = provider.GetRequiredService<ISharpNinjaFeatureClient>()
+            .Evaluate("search.enabled", true);
+
+        Assert.True(remoteClient.LastForceRefresh);
+        Assert.NotNull(eventArgs);
+        Assert.Equal(ManifestRefreshStatus.Updated, diagnostics.LastRefreshStatus);
+        Assert.Null(diagnostics.LastRefreshError);
+        Assert.False(result.Value);
+        Assert.True(File.Exists(options.ManifestCachePath));
+    }
+
+    /// <summary>FR-3 TR-4 TR-6 TR-10 TR-11 verifies rejected remote manifests leave the bundled manifest active.</summary>
+    [Fact]
+    public async Task AdminForceRefreshRetainsActiveManifestWhenSignatureFails()
+    {
+        var remoteClient = new StubRemoteManifestClient(CreateEnvelope(RemoteManifestJson));
+
+        using ServiceProvider provider = CreateProvider(
+            CreateOptions(),
+            services =>
+            {
+                services.AddSingleton<ISharpNinjaRemoteManifestClient>(remoteClient);
+                services.AddSingleton<ISharpNinjaManifestSignatureVerifier>(new RejectingSignatureVerifier());
+            });
+        ISharpNinjaFeatureFlagAdmin admin = provider.GetRequiredService<ISharpNinjaFeatureFlagAdmin>();
+
+        await admin.ForceRefreshAsync();
+        DiagnosticSnapshot diagnostics = admin.GetDiagnostics();
+        EvaluationResult<bool> result = provider.GetRequiredService<ISharpNinjaFeatureClient>()
+            .Evaluate("search.enabled", false);
+
+        Assert.Equal(ManifestRefreshStatus.Rejected, diagnostics.LastRefreshStatus);
+        Assert.Equal("rejected by test", diagnostics.LastRefreshError);
+        Assert.True(result.Value);
+    }
+
+    /// <summary>FR-8 TR-5 TR-7 TR-11 verifies exposure events are durable across provider rebuilds.</summary>
+    [Fact]
+    public void ExposureOutboxPersistsEventsAcrossProviderRebuilds()
+    {
+        SharpNinjaFeatureFlagOptions options = CreateOptions();
+        using (ServiceProvider provider = CreateProvider(options))
+        {
+            provider.GetRequiredService<ISharpNinjaFeatureClient>().Evaluate("search.enabled", false);
+        }
+
+        using ServiceProvider rebuiltProvider = CreateProvider(options);
+        IReadOnlyList<SharpNinjaExposureEvent> events =
+            rebuiltProvider.GetRequiredService<ISharpNinjaExposureEventBuffer>().Snapshot();
+
+        SharpNinjaExposureEvent exposureEvent = Assert.Single(events);
+        Assert.Equal("search.enabled", exposureEvent.FlagKey);
+        Assert.Equal("truckmate", exposureEvent.ProductId);
+    }
+
+    /// <summary>FR-8 TR-7 TR-11 verifies exposure uploads are coalesced by cadence and can be forced.</summary>
+    [Fact]
+    public async Task ExposureUploadCoordinatorCoalescesByCadenceAndSupportsForcedFlush()
+    {
+        var uploader = new RecordingExposureUploader();
+        SharpNinjaFeatureFlagOptions options = CreateOptions() with
+        {
+            ExposureUploadInterval = TimeSpan.FromSeconds(30),
+            ExposureUploadBatchSize = 10,
+        };
+
+        using ServiceProvider provider = CreateProvider(
+            options,
+            services => services.AddSingleton<ISharpNinjaExposureUploader>(uploader));
+        ISharpNinjaFeatureClient client = provider.GetRequiredService<ISharpNinjaFeatureClient>();
+        ISharpNinjaExposureUploadCoordinator coordinator =
+            provider.GetRequiredService<ISharpNinjaExposureUploadCoordinator>();
+
+        client.Evaluate("search.enabled", false);
+        SharpNinjaExposureUploadResult firstFlush = await coordinator.FlushAsync();
+        client.Evaluate("search.title", "Fallback");
+        SharpNinjaExposureUploadResult skippedFlush = await coordinator.FlushAsync();
+        SharpNinjaExposureUploadResult forcedFlush = await coordinator.FlushAsync(force: true);
+
+        Assert.Equal(1, firstFlush.UploadedCount);
+        Assert.True(skippedFlush.SkippedByCadence);
+        Assert.Equal(1, forcedFlush.UploadedCount);
+        Assert.Equal(2, uploader.Events.Count);
+        Assert.Empty(provider.GetRequiredService<ISharpNinjaExposureEventBuffer>().Snapshot());
+    }
+
     private static ServiceProvider CreateProvider() =>
-        new ServiceCollection()
-            .AddSharpNinjaFeatureFlags(CreateOptions(), ManifestJson)
+        CreateProvider(CreateOptions());
+
+    private static ServiceProvider CreateProvider(
+        SharpNinjaFeatureFlagOptions options,
+        Action<IServiceCollection>? configureServices = null,
+        string manifestJson = ManifestJson)
+    {
+        var services = new ServiceCollection();
+        configureServices?.Invoke(services);
+        return services
+            .AddSharpNinjaFeatureFlags(options, manifestJson)
             .BuildServiceProvider();
+    }
 
     private static SharpNinjaFeatureFlagOptions CreateOptions() =>
         new(
@@ -167,7 +292,28 @@ public sealed class SharpNinjaFeatureFlagServiceCollectionExtensionsTests
             ReleaseId: "2026.05",
             Environment: "Development",
             ManifestRefreshInterval: TimeSpan.FromMinutes(5),
-            ExposureUploadInterval: TimeSpan.FromMinutes(1));
+            ExposureUploadInterval: TimeSpan.FromSeconds(30))
+        {
+            ManifestCachePath = Path.Combine(CreateTempDirectory(), "manifest-cache.json"),
+            ExposureOutboxPath = Path.Combine(CreateTempDirectory(), "exposure-outbox.json"),
+        };
+
+    private static SignedManifestEnvelope CreateEnvelope(string manifestJson) =>
+        new(
+            manifestJson,
+            "test-signature",
+            "test-key",
+            "structural");
+
+    private static string CreateTempDirectory()
+    {
+        string directory = Path.Combine(
+            Path.GetTempPath(),
+            "SharpNinja.FeatureFlags.Tests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        return directory;
+    }
 
     private const string ManifestJson =
         """
@@ -303,6 +449,32 @@ public sealed class SharpNinjaFeatureFlagServiceCollectionExtensionsTests
         }
         """;
 
+    private const string RemoteManifestJson =
+        """
+        {
+          "schemaVersion": 1,
+          "productId": "truckmate",
+          "releaseId": "2026.05",
+          "environment": "Development",
+          "flags": [
+            {
+              "key": "search.enabled",
+              "type": "boolean",
+              "defaultValue": false,
+              "killable": true,
+              "productScope": [ "truckmate" ]
+            },
+            {
+              "key": "search.title",
+              "type": "string",
+              "defaultValue": "Remote Search",
+              "killable": false,
+              "productScope": [ "truckmate" ]
+            }
+          ]
+        }
+        """;
+
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => utcNow;
@@ -313,6 +485,44 @@ public sealed class SharpNinjaFeatureFlagServiceCollectionExtensionsTests
         public void Record(SharpNinjaExposureEvent exposureEvent)
         {
             ArgumentNullException.ThrowIfNull(exposureEvent);
+        }
+    }
+
+    private sealed class StubRemoteManifestClient(SignedManifestEnvelope envelope) : ISharpNinjaRemoteManifestClient
+    {
+        public bool LastForceRefresh { get; private set; }
+
+        public ValueTask<RemoteManifestFetchResult> FetchAsync(
+            SharpNinjaFeatureFlagOptions options,
+            bool forceRefresh,
+            string? currentETag,
+            CancellationToken cancellationToken = default)
+        {
+            LastForceRefresh = forceRefresh;
+            return ValueTask.FromResult(new RemoteManifestFetchResult(envelope));
+        }
+    }
+
+    private sealed class RejectingSignatureVerifier : ISharpNinjaManifestSignatureVerifier
+    {
+        public bool Verify(SignedManifestEnvelope envelope, out string? errorMessage)
+        {
+            ArgumentNullException.ThrowIfNull(envelope);
+            errorMessage = "rejected by test";
+            return false;
+        }
+    }
+
+    private sealed class RecordingExposureUploader : ISharpNinjaExposureUploader
+    {
+        public List<SharpNinjaExposureEvent> Events { get; } = [];
+
+        public ValueTask UploadAsync(
+            IReadOnlyCollection<SharpNinjaExposureEvent> events,
+            CancellationToken cancellationToken = default)
+        {
+            Events.AddRange(events);
+            return ValueTask.CompletedTask;
         }
     }
 }

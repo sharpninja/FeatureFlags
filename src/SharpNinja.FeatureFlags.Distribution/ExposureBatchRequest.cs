@@ -3,12 +3,21 @@ using System.Text.Json;
 
 namespace SharpNinja.FeatureFlags.Distribution;
 
-internal sealed record ExposureBatchRequest(
+/// <summary>FR-8 TR-7 TR-9 v1 exposure upload batch accepted by the Distribution service.</summary>
+/// <param name="ProductId">Product identifier that emitted the exposure events.</param>
+/// <param name="ReleaseId">Release identifier that emitted the exposure events.</param>
+/// <param name="Environment">Deployment environment that emitted the exposure events.</param>
+/// <param name="Events">Exposure events in the batch.</param>
+public sealed record ExposureBatchRequest(
     string ProductId,
     string ReleaseId,
     string Environment,
     IReadOnlyList<ExposureEventRequest> Events)
 {
+    /// <summary>FR-8 parses an exposure upload request from JSON.</summary>
+    /// <param name="root">Request JSON root element.</param>
+    /// <param name="defaultEnvironment">Default environment when the batch omits one.</param>
+    /// <returns>The parsed exposure batch.</returns>
     public static ExposureBatchRequest Parse(JsonElement root, string defaultEnvironment)
     {
         string productId = ReadRequiredString(root, "productId");
@@ -109,7 +118,13 @@ internal sealed record ExposureBatchRequest(
     }
 }
 
-internal sealed record ExposureEventRequest(
+/// <summary>FR-8 v1 single exposure event submitted by an SDK upload worker.</summary>
+/// <param name="FlagKey">Evaluated flag key.</param>
+/// <param name="ResolvedValue">Resolved flag value.</param>
+/// <param name="MatchedRuleIndex">Optional zero-based rule index that matched.</param>
+/// <param name="ContextFingerprint">Stable evaluation context fingerprint.</param>
+/// <param name="Timestamp">UTC timestamp captured by the SDK.</param>
+public sealed record ExposureEventRequest(
     string FlagKey,
     JsonElement ResolvedValue,
     int? MatchedRuleIndex,

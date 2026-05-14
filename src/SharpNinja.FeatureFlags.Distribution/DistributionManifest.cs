@@ -5,7 +5,14 @@ using System.Text.Json;
 
 namespace SharpNinja.FeatureFlags.Distribution;
 
-internal sealed record DistributionManifest(
+/// <summary>FR-3 FR-6 TR-8 TR-9 v1 immutable Distribution manifest payload served to SDK clients.</summary>
+/// <param name="ProductId">Product identifier addressed by the manifest.</param>
+/// <param name="ReleaseId">Release identifier addressed by the manifest.</param>
+/// <param name="Environment">Deployment environment addressed by the manifest.</param>
+/// <param name="Json">Canonical signed manifest JSON payload.</param>
+/// <param name="ETag">Strong entity tag for CDN and SDK cache validation.</param>
+/// <param name="UpdatedAt">UTC timestamp used for cache validators.</param>
+public sealed record DistributionManifest(
     string ProductId,
     string ReleaseId,
     string Environment,
@@ -13,6 +20,10 @@ internal sealed record DistributionManifest(
     string ETag,
     DateTimeOffset UpdatedAt)
 {
+    /// <summary>FR-3 parses and validates the addressing tuple from a manifest JSON document.</summary>
+    /// <param name="json">Manifest JSON document.</param>
+    /// <param name="updatedAt">Optional update timestamp.</param>
+    /// <returns>A distribution manifest ready for storage.</returns>
     public static DistributionManifest FromJson(string json, DateTimeOffset? updatedAt = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
@@ -33,6 +44,10 @@ internal sealed record DistributionManifest(
             updatedAt ?? DateTimeOffset.UtcNow);
     }
 
+    /// <summary>FR-3 checks whether a client entity-tag value matches the manifest entity tag.</summary>
+    /// <param name="candidate">Client entity-tag header value.</param>
+    /// <param name="entityTag">Manifest entity tag.</param>
+    /// <returns><see langword="true"/> when the values match.</returns>
     public static bool MatchesETag(string candidate, string entityTag)
     {
         if (string.IsNullOrWhiteSpace(candidate))
@@ -56,6 +71,9 @@ internal sealed record DistributionManifest(
         return false;
     }
 
+    /// <summary>FR-3 checks whether a delta request can be answered as not modified.</summary>
+    /// <param name="since">Client delta validator, either an entity tag or timestamp.</param>
+    /// <returns><see langword="true"/> when the client already has the current manifest.</returns>
     public bool IsNotModifiedSince(string? since)
     {
         if (string.IsNullOrWhiteSpace(since))

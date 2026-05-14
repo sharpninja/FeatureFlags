@@ -8,13 +8,78 @@ on:
 
 jobs:
   build-test:
+    name: build-test
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: ./build.ps1 Compile
-      - run: ./build.ps1 Test
-      - run: ./build.ps1 ValidateConfig
-      - run: ./build.ps1 ValidateTraceability
+      - name: Compile
+        shell: pwsh
+        run: ./build.ps1 Compile
+      - name: Unit tests
+        shell: pwsh
+        run: ./build.ps1 Test
+      - name: Validate configuration
+        shell: pwsh
+        run: ./build.ps1 ValidateConfig
+      - name: Validate traceability
+        shell: pwsh
+        run: ./build.ps1 ValidateTraceability
+
+  sdk-target-frameworks:
+    name: sdk ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            os: ubuntu-latest
+            framework: net10.0
+            workloads: ''
+          - platform: android
+            os: ubuntu-latest
+            framework: net10.0-android
+            workloads: android
+          - platform: ios
+            os: macos-latest
+            framework: net10.0-ios
+            workloads: ios
+          - platform: maccatalyst
+            os: macos-latest
+            framework: net10.0-maccatalyst
+            workloads: maccatalyst
+          - platform: windows
+            os: windows-latest
+            framework: net10.0-windows10.0.19041.0
+            workloads: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install workloads
+        if: matrix.workloads != ''
+        shell: pwsh
+        run: dotnet workload install ${{ matrix.workloads }}
+      - name: Build SDK target framework
+        shell: pwsh
+        run: dotnet build src/SharpNinja.FeatureFlags/SharpNinja.FeatureFlags.csproj -c Release -f ${{ matrix.framework }}
+
+  avalonia-integration:
+    name: avalonia integration ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run Avalonia integration tests
+        shell: pwsh
+        run: dotnet test tests/SharpNinja.FeatureFlags.Avalonia12.IntegrationTests/SharpNinja.FeatureFlags.Avalonia12.IntegrationTests.csproj -c Release --logger "trx;LogFileName=avalonia-${{ matrix.os }}.trx"

@@ -1,13 +1,57 @@
 <Project>
   <PropertyGroup>
     <SharpNinjaFeatureFlagsManifest Condition="'$(SharpNinjaFeatureFlagsManifest)' == ''">$(MSBuildProjectDirectory)\flags\flags.json</SharpNinjaFeatureFlagsManifest>
+    <SharpNinjaFeatureFlagsManifestResourceName Condition="'$(SharpNinjaFeatureFlagsManifestResourceName)' == ''">SharpNinja.FeatureFlags.BundledManifest.json</SharpNinjaFeatureFlagsManifestResourceName>
+    <SharpNinjaFeatureFlagsPublicKey Condition="'$(SharpNinjaFeatureFlagsPublicKey)' == ''">$(MSBuildProjectDirectory)\flags\public-key.ed25519</SharpNinjaFeatureFlagsPublicKey>
+    <SharpNinjaFeatureFlagsPublicKeyResourceName Condition="'$(SharpNinjaFeatureFlagsPublicKeyResourceName)' == ''">SharpNinja.FeatureFlags.ManifestPublicKey.ed25519</SharpNinjaFeatureFlagsPublicKeyResourceName>
     <SharpNinjaFeatureFlagsValidateOnBuild Condition="'$(SharpNinjaFeatureFlagsValidateOnBuild)' == ''">true</SharpNinjaFeatureFlagsValidateOnBuild>
     <SharpNinjaFeatureFlagsCliCommand Condition="'$(SharpNinjaFeatureFlagsCliCommand)' == ''">flagctl</SharpNinjaFeatureFlagsCliCommand>
+    <SharpNinjaFeatureFlagsSchemaVersion Condition="'$(SharpNinjaFeatureFlagsSchemaVersion)' == ''">1</SharpNinjaFeatureFlagsSchemaVersion>
+    <SharpNinjaFeatureFlagsEnvironment Condition="'$(SharpNinjaFeatureFlagsEnvironment)' == ''">Development</SharpNinjaFeatureFlagsEnvironment>
+    <SharpNinjaFeatureFlagsRequirePublicKey Condition="'$(SharpNinjaFeatureFlagsRequirePublicKey)' == ''">true</SharpNinjaFeatureFlagsRequirePublicKey>
+    <SharpNinjaFeatureFlagsEmitBuildIdentity Condition="'$(SharpNinjaFeatureFlagsEmitBuildIdentity)' == ''">true</SharpNinjaFeatureFlagsEmitBuildIdentity>
+    <SharpNinjaFeatureFlagsGenerateRegistrationSource Condition="'$(SharpNinjaFeatureFlagsGenerateRegistrationSource)' == ''">false</SharpNinjaFeatureFlagsGenerateRegistrationSource>
+    <SharpNinjaFeatureFlagsGeneratedSource Condition="'$(SharpNinjaFeatureFlagsGeneratedSource)' == ''">$(IntermediateOutputPath)SharpNinjaFeatureFlagsBuild.g.cs</SharpNinjaFeatureFlagsGeneratedSource>
+    <SharpNinjaFeatureFlagsValidatePublicKeyArgs Condition="Exists('$(SharpNinjaFeatureFlagsPublicKey)')"> --public-key &quot;$(SharpNinjaFeatureFlagsPublicKey)&quot;</SharpNinjaFeatureFlagsValidatePublicKeyArgs>
   </PropertyGroup>
 
   <ItemGroup Condition="Exists('$(SharpNinjaFeatureFlagsManifest)')">
-    <AdditionalFiles Include="$(SharpNinjaFeatureFlagsManifest)" />
-    <EmbeddedResource Include="$(SharpNinjaFeatureFlagsManifest)" LogicalName="SharpNinja.FeatureFlags.BundledManifest.json" />
+    <AdditionalFiles Include="$(SharpNinjaFeatureFlagsManifest)">
+      <SharpNinjaFeatureFlagsKind>Manifest</SharpNinjaFeatureFlagsKind>
+      <ProductId>$(ProductId)</ProductId>
+      <ReleaseId>$(ReleaseId)</ReleaseId>
+      <SchemaVersion>$(SharpNinjaFeatureFlagsSchemaVersion)</SchemaVersion>
+      <ManifestResourceName>$(SharpNinjaFeatureFlagsManifestResourceName)</ManifestResourceName>
+      <PublicKeyResourceName>$(SharpNinjaFeatureFlagsPublicKeyResourceName)</PublicKeyResourceName>
+    </AdditionalFiles>
+    <EmbeddedResource Include="$(SharpNinjaFeatureFlagsManifest)" LogicalName="$(SharpNinjaFeatureFlagsManifestResourceName)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(SharpNinjaFeatureFlagsPublicKey)')">
+    <AdditionalFiles Include="$(SharpNinjaFeatureFlagsPublicKey)">
+      <SharpNinjaFeatureFlagsKind>PublicKey</SharpNinjaFeatureFlagsKind>
+      <PublicKeyResourceName>$(SharpNinjaFeatureFlagsPublicKeyResourceName)</PublicKeyResourceName>
+    </AdditionalFiles>
+    <EmbeddedResource Include="$(SharpNinjaFeatureFlagsPublicKey)" LogicalName="$(SharpNinjaFeatureFlagsPublicKeyResourceName)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(SharpNinjaFeatureFlagsEmitBuildIdentity)' == 'true' and Exists('$(SharpNinjaFeatureFlagsManifest)')">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SharpNinja.FeatureFlags.ProductId</_Parameter1>
+      <_Parameter2>$(ProductId)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SharpNinja.FeatureFlags.ReleaseId</_Parameter1>
+      <_Parameter2>$(ReleaseId)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SharpNinja.FeatureFlags.ManifestResourceName</_Parameter1>
+      <_Parameter2>$(SharpNinjaFeatureFlagsManifestResourceName)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SharpNinja.FeatureFlags.PublicKeyResourceName</_Parameter1>
+      <_Parameter2>$(SharpNinjaFeatureFlagsPublicKeyResourceName)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <Target Name="ValidateSharpNinjaFeatureFlagBuildProperties"
@@ -17,12 +61,56 @@
            Text="SharpNinja Feature Flags requires the ProductId MSBuild property when a feature-flag manifest is present." />
     <Error Condition="'$(ReleaseId)' == ''"
            Text="SharpNinja Feature Flags requires the ReleaseId MSBuild property when a feature-flag manifest is present." />
+    <Error Condition="'$(SharpNinjaFeatureFlagsRequirePublicKey)' == 'true' and !Exists('$(SharpNinjaFeatureFlagsPublicKey)')"
+           Text="SharpNinja Feature Flags requires a public key file at $(SharpNinjaFeatureFlagsPublicKey) when a feature-flag manifest is present." />
+  </Target>
+
+  <Target Name="GenerateSharpNinjaFeatureFlagsRegistrationSource"
+          DependsOnTargets="ValidateSharpNinjaFeatureFlagBuildProperties"
+          BeforeTargets="CoreCompile"
+          Condition="'$(SharpNinjaFeatureFlagsGenerateRegistrationSource)' == 'true' and Exists('$(SharpNinjaFeatureFlagsManifest)')">
+    <ItemGroup>
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="// &lt;auto-generated /&gt;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="namespace SharpNinja.FeatureFlags;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="/// &lt;summary&gt;FR-1 FR-2 TR-4 generated registration overload for build-stamped SharpNinja Feature Flags defaults.&lt;/summary&gt;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="public static partial class SharpNinjaFeatureFlagsGeneratedServiceCollectionExtensions" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="{" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    private const string ProductId = &quot;$(ProductId)&quot;;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    private const string ReleaseId = &quot;$(ReleaseId)&quot;;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    private const string EnvironmentName = &quot;$(SharpNinjaFeatureFlagsEnvironment)&quot;;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    private const string ManifestResourceName = &quot;$(SharpNinjaFeatureFlagsManifestResourceName)&quot;;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    /// &lt;summary&gt;FR-1 FR-2 TR-4 registers SharpNinja Feature Flags with build-stamped identity and bundled manifest resource.&lt;/summary&gt;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    /// &lt;param name=&quot;services&quot;&gt;The service collection to update.&lt;/param&gt;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    /// &lt;returns&gt;The updated service collection.&lt;/returns&gt;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddSharpNinjaFeatureFlags(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    {" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="        System.ArgumentNullException.ThrowIfNull(services);" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="        var options = new SharpNinja.FeatureFlags.Abstractions.Options.SharpNinjaFeatureFlagOptions(ProductId, ReleaseId, EnvironmentName, System.TimeSpan.FromMinutes(5), System.TimeSpan.FromMinutes(1));" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="        return SharpNinjaFeatureFlagServiceCollectionExtensions.AddSharpNinjaFeatureFlags(services, options.Validate(), ReadEmbeddedResource(ManifestResourceName));" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    }" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    private static string ReadEmbeddedResource(string resourceName)" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    {" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="        var assembly = typeof(SharpNinjaFeatureFlagsGeneratedServiceCollectionExtensions).Assembly;" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="        using var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new System.InvalidOperationException($&quot;Embedded feature flag resource '{resourceName}' was not found.&quot;);" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="        using var reader = new System.IO.StreamReader(stream, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true);" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="        return reader.ReadToEnd();" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="    }" />
+      <_SharpNinjaFeatureFlagsGeneratedSourceLine Include="}" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(SharpNinjaFeatureFlagsGeneratedSource)"
+                      Lines="@(_SharpNinjaFeatureFlagsGeneratedSourceLine)"
+                      Overwrite="true" />
+    <ItemGroup>
+      <Compile Include="$(SharpNinjaFeatureFlagsGeneratedSource)"
+               Visible="false" />
+    </ItemGroup>
   </Target>
 
   <Target Name="ValidateSharpNinjaFeatureFlagManifest"
           DependsOnTargets="ValidateSharpNinjaFeatureFlagBuildProperties"
           BeforeTargets="CoreCompile"
           Condition="'$(SharpNinjaFeatureFlagsValidateOnBuild)' == 'true' and Exists('$(SharpNinjaFeatureFlagsManifest)')">
-    <Exec Command="&quot;$(SharpNinjaFeatureFlagsCliCommand)&quot; validate &quot;$(SharpNinjaFeatureFlagsManifest)&quot;" />
+    <Exec Command="&quot;$(SharpNinjaFeatureFlagsCliCommand)&quot; validate &quot;$(SharpNinjaFeatureFlagsManifest)&quot; --product-id &quot;$(ProductId)&quot; --release-id &quot;$(ReleaseId)&quot; --schema-version &quot;$(SharpNinjaFeatureFlagsSchemaVersion)&quot;$(SharpNinjaFeatureFlagsValidatePublicKeyArgs) @(SharpNinjaFeatureFlagBinding->'--generated-bindings &quot;%(FullPath)&quot;', ' ')" />
   </Target>
 </Project>

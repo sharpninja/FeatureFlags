@@ -153,6 +153,88 @@ public sealed class ManifestValidatorTests
         AssertError(error, "FFMANIFEST_RULE_VALUE_TYPE", "$.flags[0].rules[0].value");
     }
 
+    /// <summary>FR-12 verifies CEL rule syntax is validated in manifests.</summary>
+    [Fact]
+    public void ValidateJsonReportsRuleWhenSyntaxError()
+    {
+        ManifestValidationResult result = ManifestValidator.ValidateJson(
+            ManifestWithFlags(
+                """
+                {
+                  "key": "search.enabled",
+                  "type": "boolean",
+                  "defaultValue": true,
+                  "killable": true,
+                  "productScope": [ "truckmate" ],
+                  "rules": [
+                    {
+                      "when": "user.region == 'us",
+                      "value": false
+                    }
+                  ]
+                }
+                """));
+
+        Assert.False(result.IsValid);
+        ManifestValidationError error = Assert.Single(result.Errors);
+        AssertError(error, "FFMANIFEST_RULE_WHEN_SYNTAX", "$.flags[0].rules[0].when");
+    }
+
+    /// <summary>FR-12 verifies CEL rule predicates must be boolean expressions.</summary>
+    [Fact]
+    public void ValidateJsonReportsRuleWhenTypeError()
+    {
+        ManifestValidationResult result = ManifestValidator.ValidateJson(
+            ManifestWithFlags(
+                """
+                {
+                  "key": "search.enabled",
+                  "type": "boolean",
+                  "defaultValue": true,
+                  "killable": true,
+                  "productScope": [ "truckmate" ],
+                  "rules": [
+                    {
+                      "when": "'not-a-boolean'",
+                      "value": false
+                    }
+                  ]
+                }
+                """));
+
+        Assert.False(result.IsValid);
+        ManifestValidationError error = Assert.Single(result.Errors);
+        AssertError(error, "FFMANIFEST_RULE_WHEN_TYPE", "$.flags[0].rules[0].when");
+    }
+
+    /// <summary>FR-12 verifies CEL rules are schema-version compatible.</summary>
+    [Fact]
+    public void ValidateJsonReportsRuleSchemaVersionCompatibility()
+    {
+        ManifestValidationResult result = ManifestValidator.ValidateJson(
+            ManifestWithSchemaVersion(
+                2,
+                """
+                {
+                  "key": "search.enabled",
+                  "type": "boolean",
+                  "defaultValue": true,
+                  "killable": true,
+                  "productScope": [ "truckmate" ],
+                  "rules": [
+                    {
+                      "when": "user.region == 'us'",
+                      "value": false
+                    }
+                  ]
+                }
+                """));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Code == "FFMANIFEST_SCHEMA_VERSION" && error.Path == "$.schemaVersion");
+        Assert.Contains(result.Errors, error => error.Code == "FFMANIFEST_RULE_SCHEMA_VERSION" && error.Path == "$.flags[0].rules");
+    }
+
     private const string ValidManifest =
         """
         {
@@ -204,6 +286,28 @@ public sealed class ManifestValidatorTests
             """
             {
               "schemaVersion": 1,
+              "productId": "truckmate",
+              "releaseId": "2026.05",
+              "environment": "Production",
+              "flags": [
+            """,
+            Environment.NewLine,
+            flags,
+            Environment.NewLine,
+            """
+              ]
+            }
+            """);
+
+    private static string ManifestWithSchemaVersion(int schemaVersion, string flags) =>
+        string.Concat(
+            """
+            {
+              "schemaVersion":
+            """,
+            schemaVersion.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            """
+            ,
               "productId": "truckmate",
               "releaseId": "2026.05",
               "environment": "Production",

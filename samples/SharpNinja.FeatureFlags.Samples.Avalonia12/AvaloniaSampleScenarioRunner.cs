@@ -14,6 +14,7 @@ public static class AvaloniaSampleScenarioRunner
     private const string DashboardDefaultText = "Dashboard default fallback";
     private const string ReportsDefaultTitle = "Reports default fallback";
     private static readonly string[] ProjectIds = [AlphaProjectId, BetaProjectId];
+    private static readonly string[] SupportedProductIds = ["sample-suite", AlphaProjectId, BetaProjectId];
 
     private const string ManifestJson = """
         {
@@ -38,7 +39,7 @@ public static class AvaloniaSampleScenarioRunner
             {
               "key": "reports.title",
               "type": "string",
-              "defaultValue": "Reports unavailable",
+              "defaultValue": "Reports default fallback",
               "killable": false,
               "productScope": [ "sample-suite", "alpha" ],
               "rules": [
@@ -60,13 +61,11 @@ public static class AvaloniaSampleScenarioRunner
 
         foreach (string projectId in ProjectIds)
         {
-            using ServiceProvider suiteProvider = CreateProvider("sample-suite");
-            using ServiceProvider scopedProvider = CreateProvider(projectId);
-            ISharpNinjaFeatureClient suiteClient = suiteProvider.GetRequiredService<ISharpNinjaFeatureClient>();
-            ISharpNinjaFeatureClient scopedClient = scopedProvider.GetRequiredService<ISharpNinjaFeatureClient>();
+            using ServiceProvider provider = CreateProvider();
+            ISharpNinjaFeatureClient client = provider.GetRequiredService<ISharpNinjaFeatureClient>();
             EvaluationContext context = CreateContext(projectId);
 
-            EvaluationResult<bool> dashboard = suiteClient.Evaluate(
+            EvaluationResult<bool> dashboard = client.Evaluate(
                 DashboardEnabledFeatureKey,
                 defaultValue: false,
                 context);
@@ -77,7 +76,7 @@ public static class AvaloniaSampleScenarioRunner
                 resolvedValue: dashboard.Value ? "enabled" : DashboardDefaultText,
                 dashboard.Reason));
 
-            EvaluationResult<string> reports = scopedClient.Evaluate(
+            EvaluationResult<string> reports = client.Evaluate(
                 ReportsTitleFeatureKey,
                 ReportsDefaultTitle,
                 context);
@@ -128,16 +127,19 @@ public static class AvaloniaSampleScenarioRunner
             nameof(EvaluationReason.Default)),
     ];
 
-    private static ServiceProvider CreateProvider(string productId)
+    private static ServiceProvider CreateProvider()
     {
         ServiceCollection services = new();
         services.AddSharpNinjaFeatureFlags(
             new SharpNinjaFeatureFlagOptions(
-                productId,
+                "sample-suite",
                 "avalonia12-sample",
                 "Development",
                 TimeSpan.FromMinutes(5),
-                TimeSpan.FromMinutes(5)),
+                TimeSpan.FromMinutes(5))
+            {
+                SupportedProductIds = SupportedProductIds,
+            },
             ManifestJson);
 
         return services.BuildServiceProvider();

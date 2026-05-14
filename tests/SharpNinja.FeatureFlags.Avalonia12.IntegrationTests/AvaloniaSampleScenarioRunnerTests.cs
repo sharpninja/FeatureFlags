@@ -38,7 +38,7 @@ public sealed class AvaloniaSampleScenarioRunnerTests
         Assert.Equal(expected, actual);
     }
 
-    /// <summary>Verifies beta reports are product-scoped away from the rule and use the default fallback.</summary>
+    /// <summary>Verifies beta reports do not match the alpha project rule and use the default fallback.</summary>
     [Fact]
     public void GetOutputsBetaReportsTitleUsesDefaultFallback()
     {

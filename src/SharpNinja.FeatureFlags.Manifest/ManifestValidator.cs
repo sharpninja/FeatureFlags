@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using SharpNinja.FeatureFlags.Evaluation;
 
 namespace SharpNinja.FeatureFlags.Manifest;
 
@@ -36,6 +37,9 @@ public static class ManifestValidator
     private const string RulesArrayCode = "FFMANIFEST_RULES_ARRAY";
     private const string RuleObjectCode = "FFMANIFEST_RULE_OBJECT";
     private const string RuleValueTypeCode = "FFMANIFEST_RULE_VALUE_TYPE";
+    private const string RuleWhenSyntaxCode = "FFMANIFEST_RULE_WHEN_SYNTAX";
+    private const string RuleWhenTypeCode = "FFMANIFEST_RULE_WHEN_TYPE";
+    private const string RuleSchemaVersionCode = "FFMANIFEST_RULE_SCHEMA_VERSION";
     private const string FileReadCode = "FFMANIFEST_FILE_READ";
 
     private static readonly JsonDocumentOptions JsonOptions = new()
@@ -101,12 +105,12 @@ public static class ManifestValidator
             return ToResult(errors);
         }
 
-        ValidateSchemaVersion(root, errors);
+        int? schemaVersion = ValidateSchemaVersion(root, errors);
         string? productId = ValidateRequiredString(root, "productId", "$.productId", errors);
         _ = ValidateRequiredString(root, "releaseId", "$.releaseId", errors);
         string? environment = ValidateRequiredString(root, "environment", "$.environment", errors);
         ValidateEnvironment(environment, errors);
-        ValidateFlags(root, productId, errors);
+        ValidateFlags(root, productId, schemaVersion, errors);
 
         return ToResult(errors);
     }
@@ -122,11 +126,11 @@ public static class ManifestValidator
                     path),
             });
 
-    private static void ValidateSchemaVersion(JsonElement root, List<ManifestValidationError> errors)
+    private static int? ValidateSchemaVersion(JsonElement root, List<ManifestValidationError> errors)
     {
         if (!TryGetRequiredProperty(root, "schemaVersion", "$.schemaVersion", errors, out JsonElement schemaVersion))
         {
-            return;
+            return null;
         }
 
         if (schemaVersion.ValueKind != JsonValueKind.Number
@@ -134,7 +138,12 @@ public static class ManifestValidator
             || version != 1)
         {
             Add(errors, SchemaVersionCode, "schemaVersion must be integer 1.", "$.schemaVersion");
+            return schemaVersion.ValueKind == JsonValueKind.Number && schemaVersion.TryGetInt32(out version)
+                ? version
+                : null;
         }
+
+        return version;
     }
 
     private static string? ValidateRequiredString(
@@ -183,7 +192,11 @@ public static class ManifestValidator
         }
     }
 
-    private static void ValidateFlags(JsonElement root, string? productId, List<ManifestValidationError> errors)
+    private static void ValidateFlags(
+        JsonElement root,
+        string? productId,
+        int? schemaVersion,
+        List<ManifestValidationError> errors)
     {
         if (!TryGetRequiredProperty(root, "flags", "$.flags", errors, out JsonElement flags))
         {
@@ -200,7 +213,7 @@ public static class ManifestValidator
         int index = 0;
         foreach (JsonElement flag in flags.EnumerateArray())
         {
-            ValidateFlag(flag, index, productId, seenKeys, errors);
+            ValidateFlag(flag, index, productId, schemaVersion, seenKeys, errors);
             index++;
         }
     }
@@ -209,6 +222,7 @@ public static class ManifestValidator
         JsonElement flag,
         int index,
         string? productId,
+        int? schemaVersion,
         Dictionary<string, int> seenKeys,
         List<ManifestValidationError> errors)
     {
@@ -249,7 +263,7 @@ public static class ManifestValidator
 
         ValidateRequiredBoolean(flag, "killable", string.Concat(flagPath, ".killable"), errors);
         ValidateProductScope(flag, flagPath, productId, errors);
-        ValidateRules(flag, flagPath, type, errors);
+        ValidateRules(flag, flagPath, type, schemaVersion, errors);
     }
 
     private static string? ValidateFlagType(JsonElement flag, string flagPath, List<ManifestValidationError> errors)
@@ -346,6 +360,7 @@ public static class ManifestValidator
         JsonElement flag,
         string flagPath,
         string? type,
+        int? schemaVersion,
         List<ManifestValidationError> errors)
     {
         if (!flag.TryGetProperty("rules", out JsonElement rules))
@@ -358,6 +373,11 @@ public static class ManifestValidator
         {
             Add(errors, RulesArrayCode, "rules must be an array when present.", path);
             return;
+        }
+
+        if (schemaVersion is not null && schemaVersion != 1)
+        {
+            Add(errors, RuleSchemaVersionCode, "rules require manifest schemaVersion 1.", path);
         }
 
         int index = 0;
@@ -380,7 +400,12 @@ public static class ManifestValidator
             return;
         }
 
-        _ = ValidateRequiredString(rule, "when", string.Concat(rulePath, ".when"), errors);
+        string? when = ValidateRequiredString(rule, "when", string.Concat(rulePath, ".when"), errors);
+        if (when is not null)
+        {
+            ValidateRulePredicate(when, string.Concat(rulePath, ".when"), errors);
+        }
+
         if (TryGetRequiredProperty(
                 rule,
                 "value",
@@ -395,6 +420,27 @@ public static class ManifestValidator
                 RuleValueTypeCode,
                 string.Concat("rule value must match flag type '", type, "'."),
                 string.Concat(rulePath, ".value"));
+        }
+    }
+
+    private static void ValidateRulePredicate(string when, string path, List<ManifestValidationError> errors)
+    {
+        RulePredicateValidationResult result = RulePredicateValidator.Validate(when);
+        foreach (RulePredicateDiagnostic diagnostic in result.Diagnostics)
+        {
+            string code = string.Equals(diagnostic.Code, "FFCEL_TYPE", StringComparison.Ordinal)
+                ? RuleWhenTypeCode
+                : RuleWhenSyntaxCode;
+
+            Add(
+                errors,
+                code,
+                string.Concat(
+                    "rule when predicate is invalid at character ",
+                    diagnostic.Position.ToString(CultureInfo.InvariantCulture),
+                    ": ",
+                    diagnostic.Message),
+                path);
         }
     }
 

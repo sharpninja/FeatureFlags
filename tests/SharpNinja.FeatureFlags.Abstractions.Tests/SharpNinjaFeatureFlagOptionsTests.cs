@@ -17,6 +17,7 @@ public sealed class SharpNinjaFeatureFlagOptionsTests
         Assert.Contains(SharpNinjaProductCatalog.DriverMate, options.SupportedProductIds);
         Assert.True(options.AllowCustomEnvironments);
         Assert.Equal(SharpNinjaDeploymentEnvironment.Development, options.DeploymentEnvironment);
+        Assert.Equal(TimeSpan.FromSeconds(30), options.ExposureUploadInterval);
         Assert.Equal(TimeSpan.FromDays(90), options.ExposureRetention.RetentionPeriod);
         Assert.False(options.MultiTenant.Enabled);
         Assert.Equal(SharpNinjaMultiTenantOptions.DefaultTenantContextKey, options.MultiTenant.TenantContextKey);
@@ -91,6 +92,36 @@ public sealed class SharpNinjaFeatureFlagOptionsTests
             TenantContextKey: " ");
 
         Assert.Throws<ArgumentException>(() => tenantOptions.Validate());
+    }
+
+    /// <summary>FR-3 FR-8 TR-6 TR-7 TR-9 v1 validates SDK runtime transport, cache, and upload options.</summary>
+    [Fact]
+    public void ValidateAcceptsRuntimeCacheAndTransportOptions()
+    {
+        SharpNinjaFeatureFlagOptions options = CreateValidOptions() with
+        {
+            ManifestCachePath = "manifest-cache.json",
+            ExposureOutboxPath = "exposure-outbox.json",
+            DistributionBaseUri = new Uri("https://flags.example.test/"),
+            ExposureUploadEndpoint = new Uri("https://flags.example.test/v1/exposure"),
+            ExposureUploadBatchSize = 25,
+        };
+
+        SharpNinjaFeatureFlagOptions validated = options.Validate();
+
+        Assert.Same(options, validated);
+    }
+
+    /// <summary>FR-8 TR-7 v1 rejects invalid exposure upload batch sizes.</summary>
+    [Fact]
+    public void ValidateRejectsInvalidExposureUploadBatchSize()
+    {
+        SharpNinjaFeatureFlagOptions options = CreateValidOptions() with
+        {
+            ExposureUploadBatchSize = 0,
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => options.Validate());
     }
 
     private static SharpNinjaFeatureFlagOptions CreateValidOptions()

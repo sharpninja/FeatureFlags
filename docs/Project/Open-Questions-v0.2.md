@@ -22,7 +22,7 @@ What is the data-retention policy for exposure events? This affects Phase 5 stor
 
 Resolved 2026-05-14: exposure-event data retention is user-definable.
 
-Are the three v1 database providers (PostgreSQL, SQL Server, SQLite) the correct set, or is one of them not required and another (MySQL, Oracle) is? The architecture supports adding providers later; the question is which assemblies must ship in v1.
+Which database providers are required for v1? The architecture supports adding providers later; the question is which assemblies must ship in v1.
 
 Resolved 2026-05-14: v1 database providers are PostgreSQL and SQL Server. SQLite is not a required v1 provider.
 

@@ -24,7 +24,6 @@
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data\SharpNinja.FeatureFlags.Admin.Data.csproj" />
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.Postgres\SharpNinja.FeatureFlags.Admin.Data.Postgres.csproj" />
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.SqlServer\SharpNinja.FeatureFlags.Admin.Data.SqlServer.csproj" />
-    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin.Data.Sqlite\SharpNinja.FeatureFlags.Admin.Data.Sqlite.csproj" />
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Cli\SharpNinja.FeatureFlags.Cli.csproj" />
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Build\SharpNinja.FeatureFlags.Build.csproj" />
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Cqrs\SharpNinja.FeatureFlags.Cqrs.csproj" />

@@ -105,8 +105,10 @@ sealed class Build : NukeBuild
         List<string> violations = [];
 
         ValidateResolvedV1Decisions(violations);
+        ValidateCanonicalPlanningDocument(violations);
         ValidateDockerHostingArtifacts(violations);
         ValidateV1ProviderProjects(violations);
+        ValidateSqliteExcludedFromV1ShippingPaths(violations);
         ValidateCentralPackageManagement(violations);
 
         if (violations.Count > 0)
@@ -118,7 +120,7 @@ sealed class Build : NukeBuild
                     string.Join(Environment.NewLine, violations.Order(StringComparer.Ordinal).Select(violation => string.Concat(" - ", violation)))));
         }
 
-        Serilog.Log.Information("Configuration validation passed with {ValidationCount} checks.", 4);
+        Serilog.Log.Information("Configuration validation passed with {ValidationCount} checks.", 6);
     }
 
     static void ValidateResolvedV1Decisions(List<string> violations)
@@ -184,6 +186,48 @@ sealed class Build : NukeBuild
         }
     }
 
+    static void ValidateCanonicalPlanningDocument(List<string> violations)
+    {
+        string planningPath = RootDirectory / "docs" / "Feature-Flag-Ecosystem-Planning-v0.1.md";
+        if (!File.Exists(planningPath))
+        {
+            violations.Add("Missing docs/Feature-Flag-Ecosystem-Planning-v0.1.md.");
+            return;
+        }
+
+        string source = File.ReadAllText(planningPath);
+
+        RequireFragments(
+            "docs/Feature-Flag-Ecosystem-Planning-v0.1.md",
+            source,
+            [
+                "SharpNinja.FeatureFlags",
+                "`net10.0`",
+                "PostgreSQL and SQL Server",
+                "Docker",
+                "custom",
+                "user-definable",
+                "multi-tenant",
+                "permanent",
+            ],
+            violations);
+
+        RequireAbsentFragments(
+            "docs/Feature-Flag-Ecosystem-Planning-v0.1.md",
+            source,
+            [
+                "Byrd.FeatureFlags",
+                "src/Byrd.FeatureFlags",
+                "tests/Byrd.FeatureFlags",
+                "net8.0",
+                "ASP.NET Core 8",
+                "PostgreSQL, SQL Server, and SQLite",
+                "SQLite (the last primarily for local dev, integration tests, and small embedded deployments)",
+                "\"Postgres\" | \"SqlServer\" | \"Sqlite\"",
+            ],
+            violations);
+    }
+
     static void ValidateV1ProviderProjects(List<string> violations)
     {
         string[] requiredProviderProjects =
@@ -195,6 +239,32 @@ sealed class Build : NukeBuild
         foreach (string providerProject in requiredProviderProjects)
         {
             RequireFile(providerProject, violations);
+        }
+    }
+
+    static void ValidateSqliteExcludedFromV1ShippingPaths(List<string> violations)
+    {
+        string[] shippingPathFiles =
+        [
+            RootDirectory / "sharpninja-feature-flags.sln",
+            RootDirectory / "tests" / "ArchitectureTests" / "ArchitectureTests.csproj",
+        ];
+
+        foreach (string shippingPathFile in shippingPathFiles)
+        {
+            if (!File.Exists(shippingPathFile))
+            {
+                continue;
+            }
+
+            RequireAbsentFragments(
+                Path.GetRelativePath(RootDirectory, shippingPathFile),
+                File.ReadAllText(shippingPathFile),
+                [
+                    "SharpNinja.FeatureFlags.Admin.Data.Sqlite",
+                    "Admin.Data.Sqlite.csproj",
+                ],
+                violations);
         }
     }
 
@@ -239,6 +309,17 @@ sealed class Build : NukeBuild
             if (!source.Contains(requiredFragment, StringComparison.OrdinalIgnoreCase))
             {
                 violations.Add($"{relativePath} is missing required v1 configuration fragment: {requiredFragment}");
+            }
+        }
+    }
+
+    static void RequireAbsentFragments(string relativePath, string source, IEnumerable<string> forbiddenFragments, List<string> violations)
+    {
+        foreach (string forbiddenFragment in forbiddenFragments)
+        {
+            if (source.Contains(forbiddenFragment, StringComparison.OrdinalIgnoreCase))
+            {
+                violations.Add($"{relativePath} contains stale v1 configuration fragment: {forbiddenFragment}");
             }
         }
     }

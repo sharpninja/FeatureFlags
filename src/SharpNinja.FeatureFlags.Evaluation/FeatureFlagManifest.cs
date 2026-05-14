@@ -66,9 +66,13 @@ public sealed record FeatureFlagManifest(
         {
             foreach (JsonElement rule in rulesElement.EnumerateArray())
             {
+                string predicate = ReadRequiredString(rule, "when");
                 rules.Add(new FeatureFlagRule(
-                    ReadRequiredString(rule, "when"),
-                    ReadManifestValue(rule.GetProperty("value"), type)));
+                    predicate,
+                    ReadManifestValue(rule.GetProperty("value"), type))
+                {
+                    CompiledPredicate = RulePredicateMatcher.Compile(predicate),
+                });
             }
         }
 
@@ -115,4 +119,7 @@ public sealed record FeatureFlagDefinition(
 /// <summary>TR-11 runtime feature flag rule from a parsed manifest.</summary>
 /// <param name="When">Rule predicate text.</param>
 /// <param name="Value">Rule result value.</param>
-public sealed record FeatureFlagRule(string When, object? Value);
+public sealed record FeatureFlagRule(string When, object? Value)
+{
+    internal RulePredicateProgram? CompiledPredicate { get; init; }
+}

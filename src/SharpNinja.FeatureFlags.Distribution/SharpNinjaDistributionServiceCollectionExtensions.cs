@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace SharpNinja.FeatureFlags.Distribution;
 
@@ -13,17 +14,114 @@ public static class SharpNinjaDistributionServiceCollectionExtensions
         this IServiceCollection services,
         Action<SharpNinjaDistributionBuilder>? configure = null)
     {
+        return AddSharpNinjaFeatureFlagDistributionCore(services, configuration: null, configure);
+    }
+
+    /// <summary>Registers Distribution runtime services from configuration plus optional code-based overrides.</summary>
+    /// <param name="services">The service collection to update.</param>
+    /// <param name="configuration">Distribution configuration section.</param>
+    /// <param name="configure">Optional Distribution runtime configuration callback.</param>
+    /// <returns>The updated service collection.</returns>
+    public static IServiceCollection AddSharpNinjaFeatureFlagDistribution(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<SharpNinjaDistributionBuilder>? configure = null)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        return AddSharpNinjaFeatureFlagDistributionCore(services, configuration, configure);
+    }
+
+    private static IServiceCollection AddSharpNinjaFeatureFlagDistributionCore(
+        IServiceCollection services,
+        IConfiguration? configuration,
+        Action<SharpNinjaDistributionBuilder>? configure)
+    {
         ArgumentNullException.ThrowIfNull(services);
 
         var builder = new SharpNinjaDistributionBuilder();
-        configure?.Invoke(builder);
+        if (configuration is not null)
+        {
+            ApplyConfiguration(builder, configuration);
+        }
 
-        services.AddSingleton<IOptions<SharpNinjaDistributionOptions>>(Options.Create(builder.BuildOptions()));
-        services.AddSingleton<IDistributionManifestRegistry, InMemoryDistributionManifestRegistry>();
-        services.AddSingleton<IProductApiKeyValidator, OptionsProductApiKeyValidator>();
-        services.AddSingleton<IExposureEventStore, InMemoryExposureEventStore>();
-        services.AddSingleton<DistributionEndpointHandler>();
+        configure?.Invoke(builder);
+        SharpNinjaDistributionOptions options = builder.BuildOptions();
+
+        services.AddSingleton<IOptions<SharpNinjaDistributionOptions>>(Options.Create(options));
+        if (options.StorageMode == SharpNinjaDistributionStorageMode.FileSystem)
+        {
+            services.TryAddSingleton<IDistributionManifestRegistry, FileBackedDistributionManifestRegistry>();
+            services.TryAddSingleton<IExposureEventStore, FileBackedExposureEventStore>();
+        }
+        else
+        {
+            services.TryAddSingleton<IDistributionManifestRegistry, InMemoryDistributionManifestRegistry>();
+            services.TryAddSingleton<IExposureEventStore, InMemoryExposureEventStore>();
+        }
+
+        services.TryAddSingleton<IProductApiKeyValidator, OptionsProductApiKeyValidator>();
+        services.TryAddSingleton<IDeviceAttestationPolicy, OptionsDeviceAttestationPolicy>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IDeviceAttestationValidator, ConfiguredDeviceAttestationValidator>());
+        services.TryAddSingleton<DistributionMetrics>();
+        services.TryAddSingleton<DistributionRequestAuthorizer>();
+        services.TryAddSingleton<DistributionEndpointHandler>();
 
         return services;
     }
+
+    private static void ApplyConfiguration(SharpNinjaDistributionBuilder builder, IConfiguration configuration)
+    {
+        builder.DefaultEnvironment = ReadString(configuration["DefaultEnvironment"], builder.DefaultEnvironment);
+        builder.RequireDeviceAttestation = ReadBoolean(
+            configuration["Authorization:RequireDeviceAttestation"]
+            ?? configuration["DeviceAttestation:RequireDeviceAttestation"],
+            builder.RequireDeviceAttestation);
+        builder.StorageMode = ReadEnum(configuration["Storage:Mode"], builder.StorageMode);
+        builder.StorageRootPath = ReadString(configuration["Storage:RootPath"], builder.StorageRootPath);
+        builder.EnableCdnCacheHeaders = ReadBoolean(configuration["Cdn:EnableCacheHeaders"], builder.EnableCdnCacheHeaders);
+        builder.ManifestMaxAge = ReadSeconds(configuration["Cdn:ManifestMaxAgeSeconds"], builder.ManifestMaxAge);
+        builder.ManifestStaleWhileRevalidate = ReadSeconds(
+            configuration["Cdn:ManifestStaleWhileRevalidateSeconds"],
+            builder.ManifestStaleWhileRevalidate);
+        builder.ManifestStaleIfError = ReadSeconds(configuration["Cdn:ManifestStaleIfErrorSeconds"], builder.ManifestStaleIfError);
+
+        AddKeyMap(builder.ProductApiKeys, configuration.GetSection("ApiKeys"));
+        AddKeyMap(builder.ProductApiKeys, configuration.GetSection("ProductApiKeys"));
+        AddKeyMap(builder.DeviceAttestationTestTokens, configuration.GetSection("DeviceAttestation:TestTokens"));
+    }
+
+    private static void AddKeyMap(Dictionary<string, List<string>> target, IConfiguration section)
+    {
+        foreach (IConfigurationSection productSection in section.GetChildren())
+        {
+            List<string> values = productSection
+                .GetChildren()
+                .Select(static child => child.Value)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .Select(static value => value!)
+                .ToList();
+
+            if (values.Count == 0 && !string.IsNullOrWhiteSpace(productSection.Value))
+            {
+                values.Add(productSection.Value);
+            }
+
+            if (values.Count > 0)
+            {
+                target[productSection.Key] = values;
+            }
+        }
+    }
+
+    private static string ReadString(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+    private static bool ReadBoolean(string? value, bool fallback) =>
+        bool.TryParse(value, out bool result) ? result : fallback;
+
+    private static TimeSpan ReadSeconds(string? value, TimeSpan fallback) =>
+        int.TryParse(value, out int seconds) && seconds >= 0 ? TimeSpan.FromSeconds(seconds) : fallback;
+
+    private static SharpNinjaDistributionStorageMode ReadEnum(string? value, SharpNinjaDistributionStorageMode fallback) =>
+        Enum.TryParse(value, ignoreCase: true, out SharpNinjaDistributionStorageMode result) ? result : fallback;
 }

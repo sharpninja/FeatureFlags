@@ -43,6 +43,18 @@ services:
       FeatureFlags__Environments__AllowCustom: "true"
       FeatureFlags__ExposureRetention__UserDefined: "true"
       FeatureFlags__Tenancy__Mode: MultiTenant
+      Distribution__DefaultEnvironment: Development
+      Distribution__Storage__Mode: FileSystem
+      Distribution__Storage__RootPath: /data/distribution
+      Distribution__Cdn__EnableCacheHeaders: "true"
+      Distribution__Cdn__ManifestMaxAgeSeconds: "60"
+      Distribution__Cdn__ManifestStaleWhileRevalidateSeconds: "300"
+      Distribution__Cdn__ManifestStaleIfErrorSeconds: "3600"
+      Distribution__Authorization__RequireDeviceAttestation: "true"
+      Distribution__ApiKeys__TruckMate__0: ${FEATUREFLAGS_TRUCKMATE_DISTRIBUTION_KEY:-truckmate_distribution_dev_key}
+      Distribution__ApiKeys__DriverMate__0: ${FEATUREFLAGS_DRIVERMATE_DISTRIBUTION_KEY:-drivermate_distribution_dev_key}
+      Distribution__DeviceAttestation__TestTokens__TruckMate__0: ${FEATUREFLAGS_TRUCKMATE_ATTESTATION_TOKEN:-truckmate_attestation_dev_token}
+      Distribution__DeviceAttestation__TestTokens__DriverMate__0: ${FEATUREFLAGS_DRIVERMATE_ATTESTATION_TOKEN:-drivermate_attestation_dev_token}
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,6 +62,8 @@ services:
         condition: service_started
     ports:
       - "18081:8080"
+    volumes:
+      - featureflags-distribution:/data/distribution
     networks:
       - featureflags
 
@@ -91,3 +105,4 @@ networks:
 volumes:
   featureflags-postgres:
   featureflags-sqlserver:
+  featureflags-distribution:

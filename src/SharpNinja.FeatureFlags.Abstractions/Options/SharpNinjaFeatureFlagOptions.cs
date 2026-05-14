@@ -20,7 +20,7 @@ public sealed record SharpNinjaFeatureFlagOptions(
             "truckmate-0.0.0-stable-0",
             SharpNinjaDeploymentEnvironment.Development.Name,
             TimeSpan.FromMinutes(5),
-            TimeSpan.FromMinutes(1))
+            TimeSpan.FromSeconds(30))
         {
             ReleaseLineage = SharpNinjaReleaseLineage.Default,
         };
@@ -47,6 +47,21 @@ public sealed record SharpNinjaFeatureFlagOptions(
     /// <summary>FR-1 v1 contract: product identifiers supported by this options instance.</summary>
     public IReadOnlyCollection<string> SupportedProductIds { get; init; } =
         SharpNinjaProductCatalog.V1ProductIds;
+
+    /// <summary>FR-3 TR-6 v1 contract: optional durable path for the last verified signed manifest envelope.</summary>
+    public string? ManifestCachePath { get; init; }
+
+    /// <summary>FR-8 TR-7 v1 contract: optional durable path for the exposure event outbox.</summary>
+    public string? ExposureOutboxPath { get; init; }
+
+    /// <summary>FR-3 TR-9 v1 contract: optional Distribution service base URI used for remote manifest fetches.</summary>
+    public Uri? DistributionBaseUri { get; init; }
+
+    /// <summary>FR-8 TR-7 TR-9 v1 contract: optional exposure upload endpoint, overriding the Distribution base URI default.</summary>
+    public Uri? ExposureUploadEndpoint { get; init; }
+
+    /// <summary>FR-8 TR-7 v1 contract: maximum exposure events uploaded in one coalesced batch.</summary>
+    public int ExposureUploadBatchSize { get; init; } = 100;
 
     /// <summary>FR-1 FR-8 FR-11 TR-9 v1 contract: validates option invariants before runtime use.</summary>
     /// <returns>The current options instance when validation succeeds.</returns>
@@ -84,6 +99,34 @@ public sealed record SharpNinjaFeatureFlagOptions(
                 nameof(ExposureUploadInterval),
                 ExposureUploadInterval,
                 "Exposure upload interval must be greater than zero.");
+        }
+
+        if (ExposureUploadBatchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(ExposureUploadBatchSize),
+                ExposureUploadBatchSize,
+                "Exposure upload batch size must be greater than zero.");
+        }
+
+        if (ManifestCachePath is not null && string.IsNullOrWhiteSpace(ManifestCachePath))
+        {
+            throw new ArgumentException("Manifest cache path cannot be blank when specified.", nameof(ManifestCachePath));
+        }
+
+        if (ExposureOutboxPath is not null && string.IsNullOrWhiteSpace(ExposureOutboxPath))
+        {
+            throw new ArgumentException("Exposure outbox path cannot be blank when specified.", nameof(ExposureOutboxPath));
+        }
+
+        if (DistributionBaseUri is not null && !DistributionBaseUri.IsAbsoluteUri)
+        {
+            throw new InvalidOperationException($"{nameof(DistributionBaseUri)} must be absolute when specified.");
+        }
+
+        if (ExposureUploadEndpoint is not null && !ExposureUploadEndpoint.IsAbsoluteUri)
+        {
+            throw new InvalidOperationException($"{nameof(ExposureUploadEndpoint)} must be absolute when specified.");
         }
 
         ReleaseLineage.Validate();

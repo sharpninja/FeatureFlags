@@ -63,13 +63,13 @@ The system must, at minimum, do the following.
 
 **FR-10 — Product-scoping.** Every flag shall declare which Products are permitted to evaluate it. Attempts to read a flag from a non-scoped Product shall return Default and emit a warning.
 
-**FR-11 — Multi-environment.** The admin plane shall support at least dev / staging / production environments per the Byrd deployment model. Promotion between environments shall be an explicit, audited action.
+**FR-11 — Multi-environment.** The admin plane shall support the built-in development / staging / production environments plus customer-defined custom environments per the SharpNinja deployment model. Promotion between environments shall be an explicit, audited action.
 
 **FR-12 — Schema validation in CI.** The CLI shall validate flag definitions, rule syntax, type safety, and Product-scope correctness in CI, failing builds on violations before any binary ships.
 
 ## 5. Non-Functional / Technical Requirements
 
-**TR-1 — Target frameworks.** SDK targets `net8.0`, `net8.0-android`, `net8.0-ios`, `net8.0-maccatalyst`, `net8.0-windows10.0.19041.0`, and plain `net8.0` for Linux. Long-term support framework only; no .NET Framework support.
+**TR-1 — Target frameworks.** SDK targets `net10.0`, `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, `net10.0-windows10.0.19041.0`, and plain `net10.0` for Linux. Long-term support framework only; no .NET Framework support.
 
 **TR-2 — AOT and trim safety.** The SDK and rule evaluator shall be AOT-compatible (iOS, NativeAOT) and trim-safe. This forbids `Reflection.Emit`, dynamic expression compilation, and code generation at runtime. The evaluator shall be a tree-walking interpreter over parsed AST nodes.
 
@@ -103,11 +103,11 @@ The benefit of keeping OpenFeature's public types: consumer code is written agai
 
 Three NuGet packages are produced:
 
-`Byrd.FeatureFlags.Abstractions` — the options record (`ByrdFeatureFlagOptions`), the bespoke admin interface (`IByrdFeatureFlagAdmin`), the diagnostic types, and the `ManifestSource` factory. Depends on `OpenFeature` (for `EvaluationContext`/etc.) and `Microsoft.Extensions.Logging.Abstractions` — nothing else. Consumed by application code at compile time without dragging in implementation.
+`SharpNinja.FeatureFlags.Abstractions` — the options record (`SharpNinjaFeatureFlagOptions`), the bespoke admin interface (`ISharpNinjaFeatureFlagAdmin`), the diagnostic types, and the `ManifestSource` factory. Depends on `OpenFeature` (for `EvaluationContext`/etc.) and `Microsoft.Extensions.Logging.Abstractions` — nothing else. Consumed by application code at compile time without dragging in implementation.
 
-`Byrd.FeatureFlags` — the implementation: `ByrdFeatureFlagProvider : IFeatureProvider`, our DI-resident `ByrdFeatureClient : IFeatureClient`, the manifest store, the CEL evaluator, the signature verifier, the distribution fetcher, the hosted-service initializer, and the `AddByrdFeatureFlags(…)` extension. Depends on `Byrd.FeatureFlags.Abstractions` and the standard `Microsoft.Extensions.*` packages.
+`SharpNinja.FeatureFlags` — the implementation: `SharpNinjaFeatureFlagProvider : IFeatureProvider`, our DI-resident `SharpNinjaFeatureClient : IFeatureClient`, the manifest store, the CEL evaluator, the signature verifier, the distribution fetcher, the hosted-service initializer, and the `AddSharpNinjaFeatureFlags(…)` extension. Depends on `SharpNinja.FeatureFlags.Abstractions` and the standard `Microsoft.Extensions.*` packages.
 
-`Byrd.FeatureFlags.Build` — MSBuild integration and source generator. See §6.8.
+`SharpNinja.FeatureFlags.Build` — MSBuild integration and source generator. See §6.8.
 
 Registration and consumption are DI-driven end-to-end (per TR-11). The provider, client, manifest store, rule evaluator, fetcher, and signature verifier are all container-resolved; nothing is `new`-ed by consumer code.
 
@@ -115,7 +115,7 @@ Registration and consumption are DI-driven end-to-end (per TR-11). The provider,
 
 ```csharp
 // In Program.cs
-builder.Services.AddByrdFeatureFlags(options =>
+builder.Services.AddSharpNinjaFeatureFlags(options =>
 {
     // ProductId and ReleaseId are NOT options — they are read from the
     // compile-time-stamped [assembly: FeatureFlagProductIdentity(...)]
@@ -153,28 +153,28 @@ public class CheckoutHandler(
 
 ```csharp
 // In MauiProgram.cs
-builder.Services.AddByrdFeatureFlags(opts => { /* … */ });
+builder.Services.AddSharpNinjaFeatureFlags(opts => { /* … */ });
 builder.Logging.AddDebug();        // mobile logging plumbing is the consumer's concern
 ```
 
-`AddByrdFeatureFlags` is exposed by `Byrd.FeatureFlags` and internally registers, **as singletons in the consumer's container**:
+`AddSharpNinjaFeatureFlags` is exposed by `SharpNinja.FeatureFlags` and internally registers, **as singletons in the consumer's container**:
 
-- `IFeatureProvider` → `ByrdFeatureFlagProvider` (our implementation of OpenFeature's provider interface, holding the manifest store, CEL evaluator, signature verifier, and fetcher).
-- `IFeatureClient` → `ByrdFeatureClient` (our implementation, takes `IFeatureProvider` and the registered `IEnumerable<Hook>` collection through its constructor; never reads `Api.Instance`).
-- `IManifestStore`, `IRuleEvaluator`, `ISignatureVerifier`, `IDistributionFetcher` (the last via `IHttpClientFactory`), `IExposureBuffer`, and `IByrdFeatureFlagAdmin`.
+- `IFeatureProvider` → `SharpNinjaFeatureFlagProvider` (our implementation of OpenFeature's provider interface, holding the manifest store, CEL evaluator, signature verifier, and fetcher).
+- `IFeatureClient` → `SharpNinjaFeatureClient` (our implementation, takes `IFeatureProvider` and the registered `IEnumerable<Hook>` collection through its constructor; never reads `Api.Instance`).
+- `IManifestStore`, `IRuleEvaluator`, `ISignatureVerifier`, `IDistributionFetcher` (the last via `IHttpClientFactory`), `IExposureBuffer`, and `ISharpNinjaFeatureFlagAdmin`.
 - An `IHostedService` (`FeatureFlagInitializerHostedService`) that performs the synchronous bundled-default load on startup, kicks off the first background remote-refresh, and signals readiness before the host completes `StartAsync`.
 
-The extension does **not** call `OpenFeature.Api.Instance.SetProvider(...)`. The global is never written and never read by any code we ship. Hooks are registered as ordinary DI services (`services.AddSingleton<Hook, MyHook>()`); our `ByrdFeatureClient` resolves them by injecting `IEnumerable<Hook>` and applies them in the same lifecycle order OpenFeature's reference client does.
+The extension does **not** call `OpenFeature.Api.Instance.SetProvider(...)`. The global is never written and never read by any code we ship. Hooks are registered as ordinary DI services (`services.AddSingleton<Hook, MyHook>()`); our `SharpNinjaFeatureClient` resolves them by injecting `IEnumerable<Hook>` and applies them in the same lifecycle order OpenFeature's reference client does.
 
-The `ByrdFeatureFlagProvider` automatically injects `ProductId` and `ReleaseId` into every Evaluation Context from the compile-time build stamp; attempts to set them via the consumer's `EvaluationContext` are ignored with a diagnostic warning. This preserves FR-1 (compile-time product identity) while keeping the consumer-facing API identical to OpenFeature's.
+The `SharpNinjaFeatureFlagProvider` automatically injects `ProductId` and `ReleaseId` into every Evaluation Context from the compile-time build stamp; attempts to set them via the consumer's `EvaluationContext` are ignored with a diagnostic warning. This preserves FR-1 (compile-time product identity) while keeping the consumer-facing API identical to OpenFeature's.
 
-The bespoke admin surfaces — `RefreshAsync`, `ForceRefreshAsync`, `GetDiagnostics`, `ManifestUpdated` event — are exposed through the injectable `IByrdFeatureFlagAdmin` service, so debug menus and ops tooling participate in the same DI graph as the rest of the app. Application code that uses these features takes a hard dependency on `Byrd.FeatureFlags.Abstractions`; application code that only evaluates flags depends solely on `OpenFeature` types and remains theoretically portable.
+The bespoke admin surfaces — `RefreshAsync`, `ForceRefreshAsync`, `GetDiagnostics`, `ManifestUpdated` event — are exposed through the injectable `ISharpNinjaFeatureFlagAdmin` service, so debug menus and ops tooling participate in the same DI graph as the rest of the app. Application code that uses these features takes a hard dependency on `SharpNinja.FeatureFlags.Abstractions`; application code that only evaluates flags depends solely on `OpenFeature` types and remains theoretically portable.
 
 #### 6.1.1 Why this is sane
 
 OpenFeature's `Api.Instance` is a process-wide singleton that holds the active provider, the hook list, the evaluation-context evaluator, and the global event bus. In a strict-DI codebase this is a problem on four axes: test isolation (state leaks between integration tests in the same process), parallel test execution (writes to the global race), lifetime control (the global outlives any `IServiceProvider`), and discoverability (a dependency that doesn't appear in a constructor is invisible to architectural analysis). By implementing `IFeatureClient` ourselves and registering it in DI, all four problems disappear and TR-11 is satisfied without exception. The OpenFeature API contract is honoured because the public types and method semantics are unchanged; only the wiring is ours.
 
-### 6.2 Rule Engine (`Byrd.FeatureFlags.Evaluation`)
+### 6.2 Rule Engine (`SharpNinja.FeatureFlags.Evaluation`)
 
 A pure library with no I/O. Takes a parsed Manifest and an Evaluation Context, returns a typed evaluation outcome. AOT-safe tree-walking interpreter over a parsed CEL AST. No `Reflection.Emit`, no `System.Linq.Expressions.Compile()`, no Roslyn — the AST is interpreted node-by-node, which is mandatory for iOS and NativeAOT and remains fast because rules are tiny and the AST is cached after the first parse.
 
@@ -199,7 +199,7 @@ User-defined functions are forbidden in v1. Regular expressions are forbidden in
 
 Parsed CEL programs are cached per-FlagDefinition at Manifest load time, so steady-state evaluation is pure interpretation against a pre-built AST — typically sub-microsecond.
 
-### 6.3 Manifest Loader and Cache (`Byrd.FeatureFlags.Manifest`)
+### 6.3 Manifest Loader and Cache (`SharpNinja.FeatureFlags.Manifest`)
 
 Loads the embedded bundled-default manifest from the assembly, reads the on-disk cache, verifies signatures, and exposes the current resolved Manifest to the SDK. Pure synchronous APIs for evaluation; async APIs for refresh.
 
@@ -221,9 +221,9 @@ Stateless HTTP service fronted by a CDN. Three endpoints in v1:
 
 Authentication is per-Product API keys carried in `Authorization: Bearer …`. Rate limiting is per-key. Caching headers (`ETag`, `Cache-Control`) are correct because the CDN does the actual work.
 
-### 6.5 Admin Plane (`Byrd.FeatureFlags.Admin`)
+### 6.5 Admin Plane (`SharpNinja.FeatureFlags.Admin`)
 
-An ASP.NET Core **Blazor Web App** (.NET 8, Interactive Server render mode) hosts the entire administration surface, including flag CRUD and rule authoring. Persistence is provider-agnostic Entity Framework Core; the data layer is described in §6.6. The same host process exposes a small JSON API (`/api/v1/…`) for programmatic access by `flagctl` and CI integrations; UI and API share the application services layer so business rules are defined once.
+A Docker-hosted ASP.NET Core **Blazor Web App** (.NET 10, Interactive Server render mode) hosts the entire administration surface, including flag CRUD and rule authoring. Persistence is provider-agnostic Entity Framework Core; the data layer is described in §6.6. The same host process exposes a small JSON API (`/api/v1/…`) for programmatic access by `flagctl` and CI integrations; UI and API share the application services layer so business rules are defined once.
 
 Render-mode rationale: Interactive Server gives real-time validation, sub-second rule-preview round-trips against synthetic Evaluation Contexts, live audit-log streams, and live manifest-diff displays without a separate API/state-management layer. The admin plane is an internal tool with a known concurrent-user ceiling, so SignalR connection cost is acceptable. Public-facing or high-fan-out pages (none planned for v1) would warrant Interactive Auto or pure Server-Side Rendering instead.
 
@@ -238,11 +238,11 @@ Component breakdown:
 
 The admin plane never serves Manifests to client SDKs directly; that is the Distribution service's job (§6.4). The admin plane *produces* signed Manifests and *pushes* them to the Distribution service's origin storage.
 
-Shared library: a `Byrd.FeatureFlags.Schema` package contains the Flag/Rule/Manifest/EvaluationContext types, the CEL parser, and the manifest signer. It is referenced by the SDK provider, the admin plane, the Distribution service, and `flagctl` — so a schema change ripples through every component at compile time.
+Shared library: a `SharpNinja.FeatureFlags.Schema` package contains the Flag/Rule/Manifest/EvaluationContext types, the CEL parser, and the manifest signer. It is referenced by the SDK provider, the admin plane, the Distribution service, and `flagctl` — so a schema change ripples through every component at compile time.
 
-### 6.6 Data Layer (`Byrd.FeatureFlags.Admin.Data` and per-provider migration assemblies)
+### 6.6 Data Layer (`SharpNinja.FeatureFlags.Admin.Data` and per-provider migration assemblies)
 
-Persistence uses **Entity Framework Core** with a provider-agnostic `DbContext` plus one **migration assembly per supported database provider**. v1 supported providers: **PostgreSQL**, **SQL Server**, and **SQLite** (the last primarily for local dev, integration tests, and small embedded deployments). MySQL and Oracle are out of scope for v1 but the architecture must not foreclose them.
+Persistence uses **Entity Framework Core** with a provider-agnostic `DbContext` plus one **migration assembly per supported database provider**. v1 supported providers are **PostgreSQL** and **SQL Server**. Other database providers may be reconsidered after v1, but the v1 Docker composition and validation gates target PostgreSQL plus SQL Server.
 
 #### 6.6.1 Schema shape
 
@@ -252,7 +252,7 @@ The schema is a conventional, normalized, multi-table relational design in **Fou
 
 - `Products` — immutable `ProductId`, display name, lifecycle state.
 - `Releases` — `(ProductId, ReleaseId)` keyed; FK to `Products`; semantic version, channel (`canary`/`beta`/`stable`), publication timestamp.
-- `Environments` — `Development`, `Staging`, `Production`, plus any regional variants.
+- `Environments` — built-in `Development`, `Staging`, `Production`, plus custom-defined regional or customer environments.
 - `Flags` — flag identity; key, type, default, lifecycle state (`Proposed`/`Active`/`Sunsetting`/`Retired`), expiration date, `Killable` boolean. **No multi-valued columns.**
 - `FlagRules` — ordered list of rules per flag; FK to `Flags`; CEL source text, parsed-AST cache key, typed value, rule ordinal. **No multi-valued columns** — environment scope and channel scope are externalized (see junctions below).
 - `Manifests` — one row per `(ProductId, ReleaseId, EnvironmentId, Version)`; FK to `Products`, `Releases`, `Environments`; signed-blob reference, signature, signing-key ID.
@@ -260,6 +260,9 @@ The schema is a conventional, normalized, multi-table relational design in **Fou
 - `SigningKeys` — Ed25519 keypair metadata; private-key material lives in the host's secret store, never in this table.
 - `ApiKeys` — per-Product API key identity; FK to `Products`; hashed value, rotation timestamps. **No multi-valued columns.**
 - `AuditEvents` — append-only history; actor, action, target entity type and ID, before/after JSON payloads, reason text, timestamp.
+- `ExposureEvents` — retained exposure records keyed by Product, Release, Environment, optional Tenant, flag key, context fingerprint, and timestamp.
+- `ExposureRetentionPolicies` — user-defined retention periods scoped by Product, Environment, and optional Tenant.
+- `Tenants` — tenant identity and lifecycle state for multi-tenant deployments.
 - `Tags` — tag identity.
 - `Users`, `Roles` (if not fully delegated to the IdP).
 
@@ -288,7 +291,7 @@ Rationale: atomic review and rollback (a defective migration affects one logical
 
 Naming convention: `{YYYYMMDD}_{NNN}_{Verb}_{TableName}[_{Variant}].cs`, e.g. `20260601_001_Create_Products.cs`, `20260601_002_Create_Releases.cs`, `20260615_001_AddColumn_Flags_ExpirationDate.cs`. The table name is encoded in the class name and matched against an internal registry.
 
-Enforcement: a unit test in `Byrd.FeatureFlags.Admin.Data.Tests` reflects over every type that derives from `Microsoft.EntityFrameworkCore.Migrations.Migration` in every provider assembly, executes `Up()` and `Down()` against an `IModel`-aware fake `MigrationBuilder`, and asserts that the set of distinct table identifiers touched by the captured operations has cardinality exactly one. The test runs in CI; violations fail the build. A small attribute (`[MigrationTable("TableName")]`) lets authors declare the intended table; raw `Sql()` operations require the attribute and are verified by string-matching the SQL against the declared table name.
+Enforcement: a unit test in `SharpNinja.FeatureFlags.Admin.Data.Tests` reflects over every type that derives from `Microsoft.EntityFrameworkCore.Migrations.Migration` in every provider assembly, executes `Up()` and `Down()` against an `IModel`-aware fake `MigrationBuilder`, and asserts that the set of distinct table identifiers touched by the captured operations has cardinality exactly one. The test runs in CI; violations fail the build. A small attribute (`[MigrationTable("TableName")]`) lets authors declare the intended table; raw `Sql()` operations require the attribute and are verified by string-matching the SQL against the declared table name.
 
 ```csharp
 [MigrationTable("Flags")]
@@ -315,48 +318,40 @@ Project layout:
 
 ```
 src/
-  Byrd.FeatureFlags.Admin.Data/              ← shared DbContext, entity types, repositories,
+  SharpNinja.FeatureFlags.Admin.Data/              ← shared DbContext, entity types, repositories,
                                               ← provider-dialect abstraction, migration analyzer
-  Byrd.FeatureFlags.Admin.Data.Postgres/     ← Migrations/ for Npgsql provider
-  Byrd.FeatureFlags.Admin.Data.SqlServer/    ← Migrations/ for SqlServer provider
-  Byrd.FeatureFlags.Admin.Data.Sqlite/       ← Migrations/ for Sqlite provider
+  SharpNinja.FeatureFlags.Admin.Data.Postgres/     ← Migrations/ for Npgsql provider
+  SharpNinja.FeatureFlags.Admin.Data.SqlServer/    ← Migrations/ for SqlServer provider
 ```
 
-Each provider package depends on the shared data package, references the appropriate EF Core provider (`Npgsql.EntityFrameworkCore.PostgreSQL`, `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Sqlite`), and contains its own `Migrations/` folder. The admin-plane composition root selects the right assembly at runtime based on configuration:
+Each v1 provider package depends on the shared data package, references the appropriate EF Core provider (`Npgsql.EntityFrameworkCore.PostgreSQL` or `Microsoft.EntityFrameworkCore.SqlServer`), and contains its own `Migrations/` folder. The admin-plane composition root selects the right assembly at runtime based on configuration:
 
 ```csharp
 services.AddDbContext<AdminDbContext>(options =>
 {
-    var providerName = config["Database:Provider"];      // "Postgres" | "SqlServer" | "Sqlite"
+    var providerName = config["Database:Provider"];      // "Postgres" | "SqlServer"
     var connectionString = config.GetConnectionString("Admin");
 
     switch (providerName)
     {
         case "Postgres":
             options.UseNpgsql(connectionString, npgsql =>
-                npgsql.MigrationsAssembly("Byrd.FeatureFlags.Admin.Data.Postgres")
-                      .MigrationsHistoryTable("__ByrdMigrations"));
+                npgsql.MigrationsAssembly("SharpNinja.FeatureFlags.Admin.Data.Postgres")
+                      .MigrationsHistoryTable("__SharpNinjaMigrations"));
             break;
 
         case "SqlServer":
             options.UseSqlServer(connectionString, sql =>
-                sql.MigrationsAssembly("Byrd.FeatureFlags.Admin.Data.SqlServer")
-                   .MigrationsHistoryTable("__ByrdMigrations"));
+                sql.MigrationsAssembly("SharpNinja.FeatureFlags.Admin.Data.SqlServer")
+                   .MigrationsHistoryTable("__SharpNinjaMigrations"));
             break;
-
-        case "Sqlite":
-            options.UseSqlite(connectionString, sqlite =>
-                sqlite.MigrationsAssembly("Byrd.FeatureFlags.Admin.Data.Sqlite")
-                      .MigrationsHistoryTable("__ByrdMigrations"));
-            break;
-
         default:
             throw new ConfigurationException($"Unsupported provider: {providerName}");
     }
 });
 ```
 
-The migrations-history table is renamed `__ByrdMigrations` on every provider so the history convention is identical — no `[dbo].[__EFMigrationsHistory]` versus `public."__EFMigrationsHistory"` ambiguity in operational tooling.
+The migrations-history table is renamed `__SharpNinjaMigrations` on every provider so the history convention is identical — no `[dbo].[__EFMigrationsHistory]` versus `public."__EFMigrationsHistory"` ambiguity in operational tooling.
 
 Migrations are conceptually parallel across providers: the same logical change appears as a `{date}_{seq}_{verb}_{table}.cs` class in each provider's assembly. A shared `IProviderDialect` exposes operation-builder helpers for the patterns that vary by provider — JSON column type, timestamp type with timezone semantics, row-version concurrency, computed columns, append-only constraint emission — so the per-provider divergence is contained to a small surface and equivalent migrations remain visually parallel across assemblies.
 
@@ -370,7 +365,7 @@ Second, **anything that needs to be filterable becomes a typed column**, not a J
 
 #### 6.6.5 Append-only audit enforcement
 
-The `AuditEvents` table is enforced append-only at the database role level. The application's runtime role is granted `INSERT` and `SELECT` only; `UPDATE` and `DELETE` are revoked. The role grants are emitted by a dedicated, single-table migration class that targets `AuditEvents` exclusively, consistent with the discipline in §6.6.2. On each provider this is implemented with provider-native primitives — `REVOKE` on Postgres role; `DENY UPDATE, DELETE` on SQL Server role; trigger-based rejection on SQLite (which lacks per-statement DENY semantics) — but the application contract is identical.
+The `AuditEvents` table is enforced append-only at the database role level. The application's runtime role is granted `INSERT` and `SELECT` only; `UPDATE` and `DELETE` are revoked. The role grants are emitted by a dedicated, single-table migration class that targets `AuditEvents` exclusively, consistent with the discipline in §6.6.2. On v1 providers this is implemented with provider-native primitives — `REVOKE` on the PostgreSQL role and `DENY UPDATE, DELETE` on the SQL Server role — while preserving an identical application contract.
 
 ### 6.7 CLI (`flagctl`)
 
@@ -381,7 +376,7 @@ Cross-platform .NET tool. Used in CI and locally.
 - `flagctl pack --product <id> --release <id>` — builds an unsigned manifest from source for local testing.
 - `flagctl publish` — uploads validated flag changes to the admin plane (auth required).
 
-### 6.8 MSBuild Integration (`Byrd.FeatureFlags.Build`)
+### 6.8 MSBuild Integration (`SharpNinja.FeatureFlags.Build`)
 
 A NuGet package providing MSBuild targets that:
 
@@ -392,16 +387,16 @@ A NuGet package providing MSBuild targets that:
 
 This component is the load-bearing piece that converts "single codebase, multiple products" from an aspiration into a build-time guarantee.
 
-### 6.9 Source-Generated Flag Binding (`Byrd.FeatureFlags.Build`, additional generators)
+### 6.9 Source-Generated Flag Binding (`SharpNinja.FeatureFlags.Build`, additional generators)
 
-Ships in the same `Byrd.FeatureFlags.Build` NuGet as §6.8 but is a distinct capability: a set of Roslyn incremental source generators that bind feature flags to types and members declaratively via attributes. The goal is to move flag adoption from imperative `if (flags.GetBoolean(...))` scatter to a compile-time-validated contract — so flag use is discoverable, statically checkable, and harder to forget about (the latter is the explicit antidote the project name calls for).
+Ships in the same `SharpNinja.FeatureFlags.Build` NuGet as §6.8 but is a distinct capability: a set of Roslyn incremental source generators that bind feature flags to types and members declaratively via attributes. The goal is to move flag adoption from imperative `if (flags.GetBoolean(...))` scatter to a compile-time-validated contract — so flag use is discoverable, statically checkable, and harder to forget about (the latter is the explicit antidote the project name calls for).
 
 #### 6.9.1 Attribute surface
 
-The attributes live in `Byrd.FeatureFlags.Abstractions` so consumers reference them without a runtime dependency on the implementation package.
+The attributes live in `SharpNinja.FeatureFlags.Abstractions` so consumers reference them without a runtime dependency on the implementation package.
 
 ```csharp
-namespace Byrd.FeatureFlags;
+namespace SharpNinja.FeatureFlags;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
 public sealed class FeatureFlagAttribute : Attribute
@@ -463,7 +458,7 @@ public static partial class GeneratedFeatureFlagRegistrations
     {
         services.AddTransient<ICheckoutService>(sp =>
         {
-            var client = sp.GetRequiredService<IByrdFeatureClient>();
+            var client = sp.GetRequiredService<ISharpNinjaFeatureClient>();
             var enabled = client.GetBoolean("checkout.v2.enabled", defaultValue: false).Value;
             return enabled
                 ? new CheckoutServiceV2(/* generator-resolved ctor args via DI */)
@@ -477,13 +472,13 @@ public static partial class GeneratedFeatureFlagRegistrations
 Constructor arguments are resolved by emitting explicit `sp.GetRequiredService<T>()` calls for each parameter — no reflection, no `ActivatorUtilities`, AOT-safe.
 
 **Class-level variant selection: `[FeatureFlagVariant(key, value)]`.**
-Two or more classes implementing the same interface, each attributed with a different `VariantValue` for the same `FlagKey`, generate a string-valued variant resolver. The flag must be of type `string` (validated against the manifest); attribute placement on classes with non-string flags emits `BYRDFF0002`. Duplicate variant values emit `BYRDFF0009`.
+Two or more classes implementing the same interface, each attributed with a different `VariantValue` for the same `FlagKey`, generate a string-valued variant resolver. The flag must be of type `string` (validated against the manifest); attribute placement on classes with non-string flags emits `SNFF0002`. Duplicate variant values emit `SNFF0009`.
 
 **Property / field value binding: `[FeatureFlagValue(key)]`.**
-Applied to a `partial` property of a class that injects `IByrdFeatureClient`, the generator emits the property's getter as a call to `_flagClient.Get<T>(key, default)`. The property's CLR type must match the flag's declared type. If the property is not `partial`, the generator emits `BYRDFF0006`; if the containing class has no `IByrdFeatureClient` constructor parameter, `BYRDFF0007`.
+Applied to a `partial` property of a class that injects `ISharpNinjaFeatureClient`, the generator emits the property's getter as a call to `_flagClient.Get<T>(key, default)`. The property's CLR type must match the flag's declared type. If the property is not `partial`, the generator emits `SNFF0006`; if the containing class has no `ISharpNinjaFeatureClient` constructor parameter, `SNFF0007`.
 
 **Method gating: `[FeatureFlagGate(key)]`.**
-Applied to a `partial` method of a class that injects `IByrdFeatureClient`. The developer declares a partial method header with no body and an implementation method named `{MethodName}_Impl` containing the real logic; the generator emits the gating wrapper:
+Applied to a `partial` method of a class that injects `ISharpNinjaFeatureClient`. The developer declares a partial method header with no body and an implementation method named `{MethodName}_Impl` containing the real logic; the generator emits the gating wrapper:
 
 ```csharp
 // developer writes:
@@ -512,7 +507,7 @@ public partial class ApiController
 }
 ```
 
-The `_flagClient` and `_logger` field references resolve to constructor-injected fields of the containing class. The generator detects whether the class already injects `IByrdFeatureClient` and `ILogger<TSelf>`; if either is missing, it either (a) augments the existing constructor by emitting an additional `partial` constructor part, or (b) emits a diagnostic (`BYRDFF0007`) demanding the consumer inject them. The first behavior is the default to minimize friction; the second is opt-in via an MSBuild property for stricter codebases.
+The `_flagClient` and `_logger` field references resolve to constructor-injected fields of the containing class. The generator detects whether the class already injects `ISharpNinjaFeatureClient` and `ILogger<TSelf>`; if either is missing, it either (a) augments the existing constructor by emitting an additional `partial` constructor part, or (b) emits a diagnostic (`SNFF0007`) demanding the consumer inject them. The first behavior is the default to minimize friction; the second is opt-in via an MSBuild property for stricter codebases.
 
 C# 12+ **interceptors** are a future-but-not-v1 enhancement that would let the generator gate ordinary (non-`partial`) method *call sites* without source modification. The doc tracks interceptors as a v2 capability once they leave preview; v1 uses the `partial`-method pattern exclusively because it is stable, public, and AOT-safe today.
 
@@ -526,25 +521,25 @@ The generator reads the same flag-manifest JSON that §6.8 embeds as a bundled-d
 </ItemGroup>
 ```
 
-(The MSBuild target in `Byrd.FeatureFlags.Build` adds this automatically when the canonical path is used.) The generator parses the manifest once per compilation via `IncrementalValueProvider` so subsequent incremental builds are fast.
+(The MSBuild target in `SharpNinja.FeatureFlags.Build` adds this automatically when the canonical path is used.) The generator parses the manifest once per compilation via `IncrementalValueProvider` so subsequent incremental builds are fast.
 
-Diagnostics emitted, with stable IDs in the `BYRDFF0xxx` band:
+Diagnostics emitted, with stable IDs in the `SNFF0xxx` band:
 
-- **`BYRDFF0001` Error** — `[FeatureFlag("x")]` references a flag key `x` not present in the project's flag manifest.
-- **`BYRDFF0002` Error** — Flag type mismatch: e.g., `[FeatureFlag]` (boolean-gating) on a class whose referenced flag is of non-boolean type.
-- **`BYRDFF0003` Error** — Current `ProductId` (from the build stamp) is not in the referenced flag's `ProductScope`.
-- **`BYRDFF0004` Error** — `[FeatureFlag]`-attributed class does not implement an interface that another `[FeatureFlagFallback]`-attributed class targets.
-- **`BYRDFF0005` Error** — `[FeatureFlagFallback(typeof(I))]` references an interface `I` for which no `[FeatureFlag]`-attributed class exists in this compilation.
-- **`BYRDFF0006` Error** — `[FeatureFlagValue]` or `[FeatureFlagGate]` applied to a non-`partial` member.
-- **`BYRDFF0007` Error** — Containing class has no `IByrdFeatureClient` constructor parameter and strict-mode validation is enabled.
-- **`BYRDFF0008` Warning** — Referenced flag is past its `ExpirationDate` (configurable to error via `<TreatFeatureFlagExpirationAsError>true</TreatFeatureFlagExpirationAsError>`).
-- **`BYRDFF0009` Error** — Multiple variants share the same `VariantValue` for the same `FlagKey`.
-- **`BYRDFF0010` Warning** — Flag is in `Sunsetting` lifecycle state; usage should be migrated.
-- **`BYRDFF0011` Info** — Flag has not been evaluated in any telemetry sample in the last 90 days (requires admin-plane round-trip; emitted only when an MSBuild property enables it).
+- **`SNFF0001` Error** — `[FeatureFlag("x")]` references a flag key `x` not present in the project's flag manifest.
+- **`SNFF0002` Error** — Flag type mismatch: e.g., `[FeatureFlag]` (boolean-gating) on a class whose referenced flag is of non-boolean type.
+- **`SNFF0003` Error** — Current `ProductId` (from the build stamp) is not in the referenced flag's `ProductScope`.
+- **`SNFF0004` Error** — `[FeatureFlag]`-attributed class does not implement an interface that another `[FeatureFlagFallback]`-attributed class targets.
+- **`SNFF0005` Error** — `[FeatureFlagFallback(typeof(I))]` references an interface `I` for which no `[FeatureFlag]`-attributed class exists in this compilation.
+- **`SNFF0006` Error** — `[FeatureFlagValue]` or `[FeatureFlagGate]` applied to a non-`partial` member.
+- **`SNFF0007` Error** — Containing class has no `ISharpNinjaFeatureClient` constructor parameter and strict-mode validation is enabled.
+- **`SNFF0008` Warning** — Referenced flag is past its `ExpirationDate` (configurable to error via `<TreatFeatureFlagExpirationAsError>true</TreatFeatureFlagExpirationAsError>`).
+- **`SNFF0009` Error** — Multiple variants share the same `VariantValue` for the same `FlagKey`.
+- **`SNFF0010` Warning** — Flag is in `Sunsetting` lifecycle state; usage should be migrated.
+- **`SNFF0011` Info** — Flag has not been evaluated in any telemetry sample in the last 90 days (requires admin-plane round-trip; emitted only when an MSBuild property enables it).
 
-Each diagnostic links to documentation; the generator emits structured help URLs (`https://docs.byrd.example/ff/diagnostics/BYRDFF0001`) so IDE quick-fix info populates correctly.
+Each diagnostic links to documentation; the generator emits structured help URLs (`https://docs.sharpninja.example/feature-flags/diagnostics/SNFF0001`) so IDE quick-fix info populates correctly.
 
-The expiration and sunsetting diagnostics (`BYRDFF0008`, `BYRDFF0010`, `BYRDFF0011`) are the load-bearing feature-creep-management affordances: they turn stale flags from invisible cruft into visible build noise that costs to ignore.
+The expiration and sunsetting diagnostics (`SNFF0008`, `SNFF0010`, `SNFF0011`) are the load-bearing feature-creep-management affordances: they turn stale flags from invisible cruft into visible build noise that costs to ignore.
 
 #### 6.9.4 DI and ILogger compliance
 
@@ -558,18 +553,18 @@ It does not generate code that auto-registers types in DI without an explicit co
 
 It does not gate across assembly boundaries via attributes on types it does not own. Attributes apply only to types declared in the consuming compilation.
 
-### 6.10 CQRS Dispatcher Integration (`Byrd.FeatureFlags.Cqrs`, adapted from `f:\github\McpServer\`)
+### 6.10 CQRS Dispatcher Integration (`SharpNinja.FeatureFlags.Cqrs`, adapted from `f:\github\McpServer\`)
 
 CQRS and feature flags are mutually reinforcing patterns. CQRS routes every business operation through a single dispatch chokepoint; feature flags need a uniform enforcement point to avoid `if (flags.GetBoolean(...))` blooming across the codebase. Combining them turns flag enforcement into a dispatcher concern that fires once per operation with the full command context available — the cleanest possible blast radius for any flag check.
 
-The CQRS layer for this ecosystem is **not built from scratch**. An existing, in-house CQRS system already lives in `f:\github\McpServer\`, authored as part of the Byrd Process MCP Server work. v1 of `Byrd.FeatureFlags.Cqrs` is a **vendored copy of that codebase, renamed and adapted** rather than a greenfield build. This preserves architectural continuity with the broader Byrd ecosystem, eliminates a re-implementation tax, and reduces v1 scope materially.
+The CQRS layer for this ecosystem is **not built from scratch**. An existing, in-house CQRS system already lives in `f:\github\McpServer\`, authored as part of the Byrd Process MCP Server work. v1 of `SharpNinja.FeatureFlags.Cqrs` is a **vendored copy of that codebase, renamed and adapted** rather than a greenfield build. This preserves architectural continuity with the broader Byrd ecosystem, eliminates a re-implementation tax, and reduces v1 scope materially.
 
 #### 6.10.1 Import strategy: vendor-folder copy with namespace rename
 
 The chosen import model for v1 is a **vendor-folder copy**:
 
-1. The relevant projects under `f:\github\McpServer\` (the CQRS dispatcher, handler/behavior contracts, pipeline composition, registration helpers, and their existing test suite) are copied into this repository under `src/Byrd.FeatureFlags.Cqrs/` and `tests/Byrd.FeatureFlags.Cqrs.Tests/`.
-2. The root namespace is renamed mechanically (Roslyn-driven find/replace plus targeted manual review for string literals in tests and diagnostics) to `Byrd.FeatureFlags.Cqrs.*`.
+1. The relevant projects under `f:\github\McpServer\` (the CQRS dispatcher, handler/behavior contracts, pipeline composition, registration helpers, and their existing test suite) are copied into this repository under `src/SharpNinja.FeatureFlags.Cqrs/` and `tests/SharpNinja.FeatureFlags.Cqrs.Tests/`.
+2. The root namespace is renamed mechanically (Roslyn-driven find/replace plus targeted manual review for string literals in tests and diagnostics) to `SharpNinja.FeatureFlags.Cqrs.*`.
 3. The upstream link is **severed at v1**. Future divergence is owned by this repository. A revisit of the upstream relationship — selective backports to McpServer, periodic re-sync, or a managed hard-fork with sync tooling — is an open question for v0.2 and beyond, deferred until the v1 adaptation has stabilized.
 
 Alternatives considered: git submodule (rejected for v1 because every flag-aware adaptation becomes a multi-repo concern that blocks shipping); hard fork with periodic upstream sync (rejected for v1 on the same grounds, viable for v2 if the upstream system continues evolving in ways this project wants to track); leaving the code in McpServer and referencing it as a project reference across repos (rejected as fragile under independent versioning).
@@ -642,7 +637,7 @@ Directory access was granted to `F:\GitHub\McpServer\` and the actual source has
 
 Vendoring this project means the code becomes ours. The adaptations below are deliberate upstream changes, not workarounds. Each is minimal, additive in the sense that nothing existing breaks, and surfaces the new behavior through a clean extension point rather than through a hack.
 
-**Adaptation 1: `CallContext` unsealed; `IDispatchContextFactory` introduced; `ByrdFlagCallContext` provided.**
+**Adaptation 1: `CallContext` unsealed; `IDispatchContextFactory` introduced; `SharpNinjaFlagCallContext` provided.**
 
 `CallContext` ships from upstream as `sealed class`. The vendored copy removes `sealed` (one keyword) and is otherwise byte-identical. The dispatcher gains one new constructor parameter — `IDispatchContextFactory contextFactory` — and replaces its `new CallContext { … }` line with `contextFactory.Create(operationName: requestType.Name, cancellationToken: ct)`. The factory interface is one method:
 
@@ -653,12 +648,12 @@ public interface IDispatchContextFactory
 }
 ```
 
-A default registration `services.AddSingleton<IDispatchContextFactory, DefaultDispatchContextFactory>()` lives in the core CQRS package and produces plain `CallContext` instances. The flag-aware package's DI extension calls `services.Replace(ServiceDescriptor.Singleton<IDispatchContextFactory, ByrdFlagDispatchContextFactory>())`, and that factory returns `ByrdFlagCallContext` instances:
+A default registration `services.AddSingleton<IDispatchContextFactory, DefaultDispatchContextFactory>()` lives in the core CQRS package and produces plain `CallContext` instances. The flag-aware package's DI extension calls `services.Replace(ServiceDescriptor.Singleton<IDispatchContextFactory, SharpNinjaFlagDispatchContextFactory>())`, and that factory returns `SharpNinjaFlagCallContext` instances:
 
 ```csharp
-public sealed class ByrdFlagCallContext : CallContext
+public sealed class SharpNinjaFlagCallContext : CallContext
 {
-    public ByrdFlagCallContext(string productId, string releaseId,
+    public SharpNinjaFlagCallContext(string productId, string releaseId,
                                DeploymentEnvironment environment,
                                string operationName, CancellationToken ct)
         : base()
@@ -682,7 +677,7 @@ public sealed class ByrdFlagCallContext : CallContext
 }
 ```
 
-The kill-switch behavior, variant selector, and `IDispatchEvaluationContextProvider` all consume `ByrdFlagCallContext` directly with strong types. No string-keyed `Properties["ProductId"]` lookups. CEL rules see real typed fields.
+The kill-switch behavior, variant selector, and `IDispatchEvaluationContextProvider` all consume `SharpNinjaFlagCallContext` directly with strong types. No string-keyed `Properties["ProductId"]` lookups. CEL rules see real typed fields.
 
 **Adaptation 2: `MethodInfo.Invoke` replaced with `IHandlerInvoker<TRequest, TResult>`; dispatcher is now AOT-safe.**
 
@@ -729,18 +724,18 @@ internal sealed class FlagAwareHandlerSelector<TRequest, TResult>
     : IHandlerSelector<TRequest, TResult>
 {
     private readonly HandlerVariantMap<TRequest, TResult>   _map;
-    private readonly IByrdFeatureClient                     _flags;
+    private readonly ISharpNinjaFeatureClient                     _flags;
     private readonly IServiceProvider                       _services;
 
     public FlagAwareHandlerSelector(
         HandlerVariantMap<TRequest, TResult> map,
-        IByrdFeatureClient flags,
+        ISharpNinjaFeatureClient flags,
         IServiceProvider services)
     { _map = map; _flags = flags; _services = services; }
 
     public IHandlerInvoker<TRequest, TResult> Select(TRequest request, CallContext context)
     {
-        var ctx     = (ByrdFlagCallContext)context;     // typed, per Adaptation 1
+        var ctx     = (SharpNinjaFlagCallContext)context;     // typed, per Adaptation 1
         var variant = _flags.GetString(_map.FlagKey, "", ToEvaluationContext(ctx)).Value;
         var chosen  = _map.Resolve(variant);            // returns Type of the concrete invoker
         return (IHandlerInvoker<TRequest, TResult>)_services.GetRequiredService(chosen);
@@ -786,7 +781,7 @@ The enrichment is automatic; consumer code never populates these fields manually
 
 #### 6.10.5 Synergy with §6.9 source generators
 
-The §6.9 generators detect handler classes — types implementing `ICommandHandler<TCommand, TResult>` or `IQueryHandler<TQuery, TResult>` from the adapted `Byrd.FeatureFlags.Cqrs` namespace — and emit dispatcher-aware registration extensions in addition to the generic DI extensions in §6.9.2. For each handler set bearing flag attributes, the generator produces:
+The §6.9 generators detect handler classes — types implementing `ICommandHandler<TCommand, TResult>` or `IQueryHandler<TQuery, TResult>` from the adapted `SharpNinja.FeatureFlags.Cqrs` namespace — and emit dispatcher-aware registration extensions in addition to the generic DI extensions in §6.9.2. For each handler set bearing flag attributes, the generator produces:
 
 ```csharp
 // developer writes (in their handlers):
@@ -822,7 +817,7 @@ public static IServiceCollection AddCheckoutHandlersWithFlags(this IServiceColle
 }
 ```
 
-The dispatcher consults `IHandlerSelector<CheckoutCommand, CheckoutResult>` per §6.10.2.3 Adaptation 3. With the flag-aware DI extension registered, that selector is `FlagAwareHandlerSelector<,>`, which reads the variant map, evaluates the flag against the typed `ByrdFlagCallContext` (per Adaptation 1), and returns the chosen `IHandlerInvoker<,>` (per Adaptation 2). The invoker calls `HandleAsync` directly with no reflection. Trim-safe, AOT-safe, and the dispatcher runs everywhere the SDK runs — mobile and server alike.
+The dispatcher consults `IHandlerSelector<CheckoutCommand, CheckoutResult>` per §6.10.2.3 Adaptation 3. With the flag-aware DI extension registered, that selector is `FlagAwareHandlerSelector<,>`, which reads the variant map, evaluates the flag against the typed `SharpNinjaFlagCallContext` (per Adaptation 1), and returns the chosen `IHandlerInvoker<,>` (per Adaptation 2). The invoker calls `HandleAsync` directly with no reflection. Trim-safe, AOT-safe, and the dispatcher runs everywhere the SDK runs — mobile and server alike.
 
 The same pattern applies for queries: `IQueryHandler<TQuery, TResult>` implementations carrying `[FeatureFlagVariant]` attributes produce `IHandlerInvoker<TQuery, TResult>` invokers, a `HandlerVariantMap<TQuery, TResult>`, and the `FlagAwareHandlerSelector<TQuery, TResult>` registration. The generator emits both command and query variants automatically based on which handler interface the attributed type implements.
 
@@ -856,7 +851,7 @@ TR-11 makes DI and `ILogger` a uniform contract across every layer. This section
 
 ### 7.1 The DI contract
 
-Every public package in the ecosystem ships exactly one `IServiceCollection` extension method that registers that package's services with sensible defaults and an `Action<TOptions>` for tunables. Packages that target MAUI also ship a `MauiAppBuilder` extension that delegates to the `IServiceCollection` variant. The naming convention is `AddByrd…` (`AddByrdFeatureFlags`, `AddByrdFeatureFlagsAdmin`, `AddByrdFeatureFlagsDistribution`, `AddByrdFeatureFlagsDataPostgres`, etc.).
+Every public package in the ecosystem ships exactly one `IServiceCollection` extension method that registers that package's services with sensible defaults and an `Action<TOptions>` for tunables. Packages that target MAUI also ship a `MauiAppBuilder` extension that delegates to the `IServiceCollection` variant. The naming convention is `AddSharpNinja…` (`AddSharpNinjaFeatureFlags`, `AddSharpNinjaFeatureFlagsAdmin`, `AddSharpNinjaFeatureFlagsDistribution`, `AddSharpNinjaFeatureFlagsDataPostgres`, etc.).
 
 Internally, every injectable type is registered with the appropriate lifetime — singleton for stateful caches and configuration holders, scoped for per-request work in ASP.NET Core and Blazor, transient for stateless helpers. No type is registered with a lifetime that allows captive-dependency hazards (a scoped service injected into a singleton). A `ServiceProviderOptions.ValidateScopes = true` and `ValidateOnBuild = true` check runs in Development environments and in CI to catch these statically.
 
@@ -874,21 +869,21 @@ Hot paths use the `LoggerMessage` source-generator pattern (`[LoggerMessage(Even
 
 Log levels follow a strict ladder. `Trace` and `Debug` are for developer diagnostics and shall not be enabled in production by default. `Information` is for operationally significant transitions (manifest refreshed, kill-switch armed, provider initialized). `Warning` is for recoverable anomalies (signature failed, falling back to cache). `Error` is for failures that change observable behavior (cache corrupt, evaluator threw). `Critical` is reserved for unrecoverable subsystem failures.
 
-PII redaction is policy. User IDs and device IDs are hashed with a one-way function (HMAC-SHA256 with a per-deployment salt) before being included in any log at `Information` or higher. Flag keys are not considered PII but rule expressions may contain operator names or comments that should not be exposed; the rule evaluator never logs full rule text above `Debug`. The redaction helpers live in `Byrd.FeatureFlags.Diagnostics` and are exposed as a `ILogValueRedactor` service so consumers and tests can substitute.
+PII redaction is policy. User IDs and device IDs are hashed with a one-way function (HMAC-SHA256 with a per-deployment salt) before being included in any log at `Information` or higher. Flag keys are not considered PII but rule expressions may contain operator names or comments that should not be exposed; the rule evaluator never logs full rule text above `Debug`. The redaction helpers live in `SharpNinja.FeatureFlags.Diagnostics` and are exposed as a `ILogValueRedactor` service so consumers and tests can substitute.
 
-Event IDs are reserved in 1000-number bands per component (`Byrd.FeatureFlags`: 1000–1999, `Byrd.FeatureFlags.Evaluation`: 2000–2999, `Byrd.FeatureFlags.Manifest`: 3000–3999, Distribution service: 4000–4999, admin plane: 5000–5999, data layer: 6000–6999, CLI: 7000–7999, MSBuild integration: 8000–8999). Within each band, individual event IDs are stable and documented; renumbering an event ID is a breaking change.
+Event IDs are reserved in 1000-number bands per component (`SharpNinja.FeatureFlags`: 1000–1999, `SharpNinja.FeatureFlags.Evaluation`: 2000–2999, `SharpNinja.FeatureFlags.Manifest`: 3000–3999, Distribution service: 4000–4999, admin plane: 5000–5999, data layer: 6000–6999, CLI: 7000–7999, MSBuild integration: 8000–8999). Within each band, individual event IDs are stable and documented; renumbering an event ID is a breaking change.
 
 ### 7.3 Per-component application of the contract
 
-**Client SDK and provider.** Construction happens through `AddByrdFeatureFlags`. The provider holds `ILogger<ByrdFeatureFlagProvider>`, the rule evaluator holds `ILogger<CelRuleEvaluator>`, the manifest store holds `ILogger<ManifestStore>`, the fetcher holds `ILogger<DistributionFetcher>` plus a `HttpClient` from `IHttpClientFactory`. The signature verifier holds `ILogger<SignatureVerifier>`. None of these has a public parameterless constructor.
+**Client SDK and provider.** Construction happens through `AddSharpNinjaFeatureFlags`. The provider holds `ILogger<SharpNinjaFeatureFlagProvider>`, the rule evaluator holds `ILogger<CelRuleEvaluator>`, the manifest store holds `ILogger<ManifestStore>`, the fetcher holds `ILogger<DistributionFetcher>` plus a `HttpClient` from `IHttpClientFactory`. The signature verifier holds `ILogger<SignatureVerifier>`. None of these has a public parameterless constructor.
 
 **Rule engine.** The evaluator is registered as a singleton. The parser is registered as a singleton with an internal `ConcurrentDictionary<string, CompiledExpression>` cache. The custom-function table is registered as a singleton; tests substitute it to inject deterministic mocks for `bucket()` and `version_compare()`.
 
 **Manifest store and cache.** Registered as singleton. Reads cache from disk in its hosted-service initialization step; never blocks consumer construction.
 
-**Distribution service.** Standard ASP.NET Core 8 minimal API host. `AddByrdFeatureFlagsDistribution` registers the manifest origin store, signature signer, exposure-event ingestion handler, and API-key validator. Endpoint handlers accept `ILogger<TEndpoint>` and the relevant services via parameter injection.
+**Distribution service.** Standard ASP.NET Core 10 minimal API host. `AddSharpNinjaFeatureFlagsDistribution` registers the manifest origin store, signature signer, exposure-event ingestion handler, and API-key validator. Endpoint handlers accept `ILogger<TEndpoint>` and the relevant services via parameter injection.
 
-**Admin plane (Blazor).** Pages accept `ILogger<TPage>` via `[Inject]`. Application services (`IFlagService`, `IManifestPublishService`, etc.) are scoped per circuit. The dialect helper (`IProviderDialect`) is registered as a singleton resolved from configuration. The migration-history bootstrap that ensures `__ByrdMigrations` exists runs as an `IHostedService` on startup.
+**Admin plane (Blazor).** Pages accept `ILogger<TPage>` via `[Inject]`. Application services (`IFlagService`, `IManifestPublishService`, etc.) are scoped per circuit. The dialect helper (`IProviderDialect`) is registered as a singleton resolved from configuration. The migration-history bootstrap that ensures `__SharpNinjaMigrations` exists runs as an `IHostedService` on startup.
 
 **Data layer.** `AddDbContext<AdminDbContext>` registers the context as scoped per request/circuit. Repositories accept `AdminDbContext` and `ILogger<TRepo>` and are themselves scoped. `IDbContextFactory<AdminDbContext>` is registered for the small number of background services that need to outlive a request.
 
@@ -905,7 +900,7 @@ Tests use the same DI container they are testing. The standard pattern is:
 public async Task Evaluate_returns_default_when_flag_missing()
 {
     var services = new ServiceCollection();
-    services.AddByrdFeatureFlags(opts =>
+    services.AddSharpNinjaFeatureFlags(opts =>
     {
         opts.BundledManifestSource = ManifestSource.InMemoryFixture(EmptyManifest);
         opts.DistributionEndpoint  = null; // disable remote
@@ -927,7 +922,7 @@ public async Task Evaluate_returns_default_when_flag_missing()
 
 ### 7.5 AOT and trimming
 
-Both DI and `ILogger` source generators are AOT-friendly in .NET 8. The SDK uses only `GetRequiredService<T>()` and constructor injection — never `GetService(Type)` with a runtime `Type` — to remain trim-safe. The `LoggerMessage` source generator emits static partial methods that survive trimming and AOT, and is the only logging style permitted in the AOT-targeted SDK assemblies.
+Both DI and `ILogger` source generators are AOT-friendly in .NET 10. The SDK uses only `GetRequiredService<T>()` and constructor injection — never `GetService(Type)` with a runtime `Type` — to remain trim-safe. The `LoggerMessage` source generator emits static partial methods that survive trimming and AOT, and is the only logging style permitted in the AOT-targeted SDK assemblies.
 
 ## 8. Evaluation Algorithm (Normative)
 
@@ -964,7 +959,7 @@ Per the Byrd Process, TDD drives Implementation. The Testing Requirements artifa
 
 **Integration tests** shall cover at minimum: end-to-end Manifest fetch + verification + cache + evaluation against a stub Distribution service; offline boot using only bundled defaults; recovery from corrupt cache; signature-failure rejection; cache eviction under disk pressure; ProductScope enforcement; kill-switch propagation latency.
 
-**Cross-platform validation** shall run the integration test suite on a CI matrix covering all five platforms via .NET MAUI workloads and (for Linux) plain .NET 8.
+**Cross-platform validation** shall run the integration test suite on a CI matrix covering all five platforms via .NET MAUI workloads and (for Linux) plain .NET 10.
 
 **Human validation** shall cover: admin-plane workflow usability with at least three operators; verification that a non-engineer can read and understand a rule before it is published; verification that a published kill-switch reaches a sample app on each platform within the documented SLA.
 
@@ -972,23 +967,23 @@ Per the Byrd Process, TDD drives Implementation. The Testing Requirements artifa
 
 Sequencing prioritizes delivering value to the application teams *before* delivering polish to the admin team. The application teams cannot ship products without the SDK + bundled defaults + MSBuild integration; they can ship adequately with manually-edited JSON until the admin plane exists.
 
-**Phase 0 — Foundations (2–3 weeks).** Schemas (Flag, Rule, Manifest, EvaluationContext), signing/key model, CLI skeleton, repo layout, CI scaffolding, **the DI and ILogger contracts from §7 codified as a shared abstractions package (`Byrd.FeatureFlags.Abstractions`) consumed by every subsequent component**, the public-API test that forbids consumer-callable constructors on injectable types, and the structured-logging analyzer rule. Output: code-free design alignment locked; the cross-cutting contracts are in place before any component-level Implementation begins.
+**Phase 0 — Foundations (2–3 weeks).** Schemas (Flag, Rule, Manifest, EvaluationContext), signing/key model, CLI skeleton, repo layout, CI scaffolding, **the DI and ILogger contracts from §7 codified as a shared abstractions package (`SharpNinja.FeatureFlags.Abstractions`) consumed by every subsequent component**, the public-API test that forbids consumer-callable constructors on injectable types, and the structured-logging analyzer rule. Output: code-free design alignment locked; the cross-cutting contracts are in place before any component-level Implementation begins.
 
-**Phase 1 — Build-time pipeline, bundled defaults, and flag-binding generators (5–7 weeks).** MSBuild integration; source generator for Product/Release stamping; embed-as-resource pipeline; `flagctl validate`; the §6.9 attribute set (`[FeatureFlag]`, `[FeatureFlagFallback]`, `[FeatureFlagVariant]`, `[FeatureFlagValue]`, `[FeatureFlagGate]`) in `Byrd.FeatureFlags.Abstractions`; the Roslyn incremental generators that emit DI registration extensions, partial-method gates, and partial-property accessors; the `BYRDFF0xxx` diagnostic set including expiration and sunsetting warnings. Output: an application can declare ProductId/ReleaseId, embed a default manifest, attribute classes and members with flag bindings, get compile-time diagnostics on flag-key typos and product-scope violations, and call a stub evaluator that returns the default.
+**Phase 1 — Build-time pipeline, bundled defaults, and flag-binding generators (5–7 weeks).** MSBuild integration; source generator for Product/Release stamping; embed-as-resource pipeline; `flagctl validate`; the §6.9 attribute set (`[FeatureFlag]`, `[FeatureFlagFallback]`, `[FeatureFlagVariant]`, `[FeatureFlagValue]`, `[FeatureFlagGate]`) in `SharpNinja.FeatureFlags.Abstractions`; the Roslyn incremental generators that emit DI registration extensions, partial-method gates, and partial-property accessors; the `SNFF0xxx` diagnostic set including expiration and sunsetting warnings. Output: an application can declare ProductId/ReleaseId, embed a default manifest, attribute classes and members with flag bindings, get compile-time diagnostics on flag-key typos and product-scope violations, and call a stub evaluator that returns the default.
 
 **Phase 2 — Evaluator and rule engine (3–4 weeks).** CEL parser, AST cache, tree-walking interpreter, the v1 custom-function table (`semver_satisfies`, `bucket`, `version_compare`), iteration-count limits on macros, full unit-test coverage including a property-based determinism suite. AOT verification on iOS and NativeAOT. Output: full rule evaluation against in-memory manifests; no network yet.
 
 **Phase 3 — Distribution and remote override (3–4 weeks).** Distribution service, CDN integration, SDK fetcher, signature verification, on-disk cache, force-refresh path. Output: remote-driven flag changes reach apps and survive offline.
 
-**Phase 4 — Admin plane v1 (7–9 weeks).** Blazor Web App scaffold with Interactive Server render mode; provider-agnostic EF Core data layer with the single-table `Entities` design and three per-provider migration assemblies (PostgreSQL, SQL Server, SQLite); typed repository abstractions over the discriminated table; provider-dialect helper for JSON column types and indexes; flag CRUD; Monaco-based CEL rule editor with live preview against synthetic contexts; manifest builder; promotion workflow; append-only audit enforcement via per-provider role-grant or trigger pattern; OIDC SSO; policy-based RBAC (Viewer / Editor / Publisher / KeyAdmin) with two-person production publish; Product × Release pivot grid; diff-before-publish gate. Output: operators stop hand-editing JSON; the same admin binary runs on any of the three supported databases via configuration alone.
+**Phase 4 — Admin plane v1 (7–9 weeks).** Docker-hosted Blazor Web App scaffold with Interactive Server render mode; provider-agnostic EF Core data layer with normalized tables and two required per-provider migration assemblies (PostgreSQL and SQL Server); typed repository abstractions; provider-dialect helper for JSON column types and indexes; custom-defined environments; multi-tenant RBAC and key isolation; user-defined exposure-retention policy; flag CRUD; Monaco-based CEL rule editor with live preview against synthetic contexts; manifest builder; promotion workflow; append-only audit enforcement via per-provider role-grant pattern; OIDC SSO; policy-based RBAC (Viewer / Editor / Publisher / KeyAdmin) with two-person production publish; Product × Release pivot grid; diff-before-publish gate. Output: operators stop hand-editing JSON; the same admin binary runs in the Docker composition against PostgreSQL or SQL Server via configuration alone.
 
 **Phase 5 — Exposure tracking and observability (2–3 weeks).** Exposure event pipeline, coalescing, diagnostic snapshot API, Prometheus metrics. Output: the team can answer "who saw which variant of which flag" without log diving.
 
-**Phase 6 — CQRS dispatcher adaptation (3–4 weeks).** Sub-task 6.1 — finalize `docs/cqrs-adaptation-delta.md` from §6.10.2.2 and §6.10.2.3; line-numbered diff against upstream `Dispatcher.cs` and `CallContext.cs`. Sub-task 6.2 — vendor-folder copy of `src/McpServer.Cqrs/` and its tests; namespace rename to `Byrd.FeatureFlags.Cqrs`; `LICENSE`/`NOTICE` retention and `THIRD-PARTY-NOTICES.md` produced; all existing tests passing under the new namespace; Apache-2.0 §4 obligations satisfied. Sub-task 6.3 — the three §6.10.2.3 adaptations: remove `sealed` from `CallContext`, introduce `IDispatchContextFactory`, replace `MethodInfo.Invoke` with `IHandlerInvoker<TRequest, TResult>` and the typed invocation path, add `IHandlerSelector<TRequest, TResult>` as a first-class extension point; update upstream tests to cover the new extension points (default selector, default factory, default invoker registration via the assembly-scan fallback). Sub-task 6.4 — flag-aware components: `ByrdFlagCallContext`, `ByrdFlagDispatchContextFactory`, `FlagAwareHandlerSelector<,>`, `IDispatchEvaluationContextProvider`, `KillSwitchBehavior`, `ExposureLoggingBehavior`, `FlagSnapshotBehavior`, `ConcurrencyLimitBehavior`. Sub-task 6.5 — §6.9 generator extension that detects `ICommandHandler<,>` / `IQueryHandler<,>` implementations carrying flag attributes and emits the registration shape shown in §6.10.5 (handler-type registration, generated `IHandlerInvoker<,>` per handler, `HandlerVariantMap<,>` singleton, `FlagAwareHandlerSelector<,>` registration). Output: the adapted CQRS system in this repository with first-class flag awareness; CEL rules target typed dispatch-level facts; no `if (flag)` scatter; **AOT-safe — the dispatcher runs in MAUI hosts as well as server hosts** because the typed-invoker path eliminates the reflection-based dispatch step.
+**Phase 6 — CQRS dispatcher adaptation (3–4 weeks).** Sub-task 6.1 — finalize `docs/cqrs-adaptation-delta.md` from §6.10.2.2 and §6.10.2.3; line-numbered diff against upstream `Dispatcher.cs` and `CallContext.cs`. Sub-task 6.2 — vendor-folder copy of `src/McpServer.Cqrs/` and its tests; namespace rename to `SharpNinja.FeatureFlags.Cqrs`; `LICENSE`/`NOTICE` retention and `THIRD-PARTY-NOTICES.md` produced; all existing tests passing under the new namespace; Apache-2.0 §4 obligations satisfied. Sub-task 6.3 — the three §6.10.2.3 adaptations: remove `sealed` from `CallContext`, introduce `IDispatchContextFactory`, replace `MethodInfo.Invoke` with `IHandlerInvoker<TRequest, TResult>` and the typed invocation path, add `IHandlerSelector<TRequest, TResult>` as a first-class extension point; update upstream tests to cover the new extension points (default selector, default factory, default invoker registration via the assembly-scan fallback). Sub-task 6.4 — flag-aware components: `SharpNinjaFlagCallContext`, `SharpNinjaFlagDispatchContextFactory`, `FlagAwareHandlerSelector<,>`, `IDispatchEvaluationContextProvider`, `KillSwitchBehavior`, `ExposureLoggingBehavior`, `FlagSnapshotBehavior`, `ConcurrencyLimitBehavior`. Sub-task 6.5 — §6.9 generator extension that detects `ICommandHandler<,>` / `IQueryHandler<,>` implementations carrying flag attributes and emits the registration shape shown in §6.10.5 (handler-type registration, generated `IHandlerInvoker<,>` per handler, `HandlerVariantMap<,>` singleton, `FlagAwareHandlerSelector<,>` registration). Output: the adapted CQRS system in this repository with first-class flag awareness; CEL rules target typed dispatch-level facts; no `if (flag)` scatter; **AOT-safe — the dispatcher runs in MAUI hosts as well as server hosts** because the typed-invoker path eliminates the reflection-based dispatch step.
 
 **Phase 7 — Experimentation hooks (deferred).** A/B/n assignment with logged exposures, statistical analysis UI, MediatR integration package (subject to licensing review), Wolverine and Mediator.NET integration packages, event-sourcing primitives if warranted. Explicitly out of v1 scope.
 
-Each phase exits only when its unit tests, integration tests, and prior-phase regression suites all pass. Each phase ships through Dev → Staging → Production per the Byrd deployment model before the next phase begins Implementation.
+Each phase exits only when its unit tests, integration tests, and prior-phase regression suites all pass. Each phase ships through Development → Staging → Production, or the configured custom environment chain, per the SharpNinja deployment model before the next phase begins Implementation.
 
 ## 12. Known Risks and Mitigations
 
@@ -1014,28 +1009,44 @@ The CQRS-adaptation risk (the vendored copy of `f:\github\McpServer\` brings in 
 
 The upstream-divergence risk (the vendored copy diverges from McpServer over time and useful upstream improvements are missed, or McpServer absorbs adaptations that should have been contributed back) is accepted at v1 as the price of unblocking shipping. Reconciliation is an open question in §13 for v0.2. The discovery delta documents the v1 divergence baseline so future re-sync work has a known starting point.
 
-The handler-variant-explosion risk (CQRS makes it almost too easy to add a fifth variant of `CheckoutCommandHandler` without retiring the prior four) is the flagship feature-creep failure mode this project exists to prevent. Mitigations: §6.9's `BYRDFF0008`/`BYRDFF0010`/`BYRDFF0011` diagnostics fire on expired, sunsetting, and unused flags at consumer build time, turning stale handler variants into visible build noise; the admin plane's flag-lifecycle UI surfaces handler-variant flags with no recent exposure; the two-person production-publish rule applies to lifecycle transitions, so a flag cannot be silently extended forever without review. Variant-handler explosion is treated as a workflow problem the system actively surfaces, not a technical problem the dispatcher solves.
+The handler-variant-explosion risk (CQRS makes it almost too easy to add a fifth variant of `CheckoutCommandHandler` without retiring the prior four) is the flagship feature-creep failure mode this project exists to prevent. Mitigations: §6.9's `SNFF0008`/`SNFF0010`/`SNFF0011` diagnostics fire on expired, sunsetting, and unused flags at consumer build time, turning stale handler variants into visible build noise; the admin plane's flag-lifecycle UI surfaces handler-variant flags with no recent exposure; the two-person production-publish rule applies to lifecycle transitions, so a flag cannot be silently extended forever without review. Variant-handler explosion is treated as a workflow problem the system actively surfaces, not a technical problem the dispatcher solves.
 
 ## 13. Open Questions for Iteration v0.2
 
-These are deliberately unresolved here; the Byrd Process expects refinement to occur as Implementation surfaces them.
+These questions have been resolved for v1 as of 2026-05-14. The Byrd Process still expects future refinement when Implementation surfaces new facts.
 
 What is the canonical list of Products planned for v1? This drives admin-plane RBAC modeling and the size of the bundled-default footprint.
 
+Resolved 2026-05-14: v1 Products are TruckMate and DriverMate.
+
 What is the canonical Release lineage strategy — strict semver per Product, channel-and-build (canary/beta/stable + build number), or both? This is needed before the Manifest-addressing scheme is finalized in Phase 0.
+
+Resolved 2026-05-14: use both strict semver per Product and channel-and-build lineage.
 
 What environments exist beyond dev / staging / prod? Some product lines may require regional production environments (e.g. EU vs US data residency); this affects Distribution-service deployment topology.
 
+Resolved 2026-05-14: environments beyond dev / staging / prod are custom-defined.
+
 Which platforms host the admin plane and Distribution service? Cloud, on-prem, or hybrid? This is independent of the SDK design and can be answered later, but affects Phase 3 and Phase 4 effort.
+
+Resolved 2026-05-14: host the admin plane and Distribution service with Docker.
 
 What is the data-retention policy for exposure events? This affects Phase 5 storage design.
 
-Are the three v1 database providers (PostgreSQL, SQL Server, SQLite) the correct set, or is one of them not required and another (MySQL, Oracle) is? The architecture supports adding providers later; the question is which assemblies must ship in v1.
+Resolved 2026-05-14: exposure-event data retention is user-definable.
+
+Which database providers are required for v1? The architecture supports adding providers later; the question is which assemblies must ship in v1.
+
+Resolved 2026-05-14: v1 database providers are PostgreSQL and SQL Server.
 
 Is multi-tenant deployment in scope for v1? The `Tenant` column in the `Entities` table makes it cheap to support, but the admin-plane UX, RBAC, and key-isolation work to make multi-tenancy real is significant and may be a v2 concern.
 
+Resolved 2026-05-14: multi-tenant deployment is in scope for v1.
+
 What is the long-term relationship between this repository's vendored CQRS copy and the upstream `sharpninja/McpServer` repository? Options for v0.2 onward: (a) accept permanent divergence and own the code outright; (b) periodic upstream-sync with backports for non-flag-specific improvements; (c) selective contribution of flag-agnostic adaptations back to McpServer while keeping flag-aware extensions exclusive to this repository. The choice affects how the adaptation delta is structured during Phase 6 discovery — option (c) requires the delta to clearly separate flag-aware from non-flag-aware changes from the first commit.
+
+Resolved 2026-05-14: choose option (a). This repository owns the CQRS fork permanently. The vendored CQRS code is maintained as SharpNinja feature-flag infrastructure, with no expected periodic upstream sync or contribution-back obligation to `sharpninja/McpServer`. This repository's implementation is the forward path; `McpServer.Cqrs` will be deprecated in favor of `SharpNinja.FeatureFlags.Cqrs`.
 
 ---
 
-*End of Planning Artifact v0.1. Next iteration begins once the open questions in §12 are answered or explicitly deferred.*
+*End of Planning Artifact v0.1. Next iteration begins from the resolved v1 decisions above and any new implementation evidence.*
