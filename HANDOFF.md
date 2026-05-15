@@ -1,15 +1,16 @@
 # FeatureFlags Handoff
 
-Last updated: 2026-05-15 16:39 UTC
+Last updated: 2026-05-15 17:16 UTC
 
 ## Current State
 
 - Workspace: `F:\GitHub\FeatureFlags`
 - Branch: `main`
-- HEAD: `37dc647 docs: refresh requirements wiki mapping`
+- HEAD: `a8dbca6 docs: add wrap-up handoff`
 - Previous v1 implementation commit: `595ee8f feat: complete feature flags v1 scope`
 - Tracked worktree before handoff/export edits: clean
-- Git remote: none configured; push/sync is blocked until a remote is added
+- Azure remote: `origin` -> `https://McpServer@dev.azure.com/McpServer/McpServer/_git/FeatureFlags`
+- GitHub remote: `github` -> `https://github.com/sharpninja/FeatureFlags.git`
 - MCP plugin session: `Codex-20260514T135833Z-featureflags-session`
 - Current wrap-up turn: `req-20260515T163404Z-prompt-422a`
 
@@ -17,6 +18,10 @@ Last updated: 2026-05-15 16:39 UTC
 
 - Completed FeatureFlags v1 implementation and committed it at `595ee8f`.
 - Reconciled generated wiki TR-per-FR mapping exports and committed them at `37dc647`.
+- Wrote and committed this handoff at `a8dbca6`.
+- Created Azure DevOps repo `FeatureFlags` in project `McpServer`.
+- Created GitHub repo `sharpninja/FeatureFlags` as a private mirror.
+- Pushed `main` to both remotes; both remote heads matched `a8dbca642818faed86e19445abd2188adbb808bb` before this handoff update.
 - Stopped all listed background agents from the active context.
 - Generated requirements wiki export through `mcpserver-codex-plugin`, then rejected the generated projection because the MCP requirements store has no TEST mappings and the export reintroduced stale `*(Planned)*` rows.
 - Kept fallback JSON logs current under `.mcpServer`, including `.mcpServer/structured-session-log-20260515.json`.
@@ -33,6 +38,7 @@ Recent verified gates:
 - `git diff --check` passed before handoff/export edits.
 - Stale status scan returned no matches for `*(Planned)*`, `| Planned |`, `| In Progress |`, and `| Blocked |` under `docs\Project` and `docs\Project\wiki`.
 - Warning-suppression scan returned no matches for `SuppressMessage`, `NoWarn`, `WarningsNotAsErrors`, `TreatWarningsAsErrors=false`, and `#pragma warning disable`.
+- Remote sync verification showed `origin/main` and `github/main` at `a8dbca642818faed86e19445abd2188adbb808bb`.
 
 ## Subagent Closure
 
@@ -61,8 +67,7 @@ Closed agent ids:
 
 - No known implementation work remains in the tracked repo state.
 - MCP requirements export remains blocked until the plugin/server Requirements client can mutate TEST records and mappings with marker API-key auth.
-- Push/sync remains blocked because `git remote -v` returned no configured remote.
-- Run final wrap-up validation after this handoff is committed:
+- Run final wrap-up validation after this handoff update is committed and pushed:
   - `git diff --check`
   - focused status/export checks
   - plugin `stop-gate.sh`
