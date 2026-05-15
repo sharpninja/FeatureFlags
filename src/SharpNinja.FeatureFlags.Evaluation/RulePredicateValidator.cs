@@ -330,6 +330,9 @@ internal enum RuleValueKind
     String,
     Number,
     List,
+
+    /// <summary>FR-5 §6.2 map literal value kind.</summary>
+    Map,
 }
 
 internal abstract class RuleExpression
@@ -479,6 +482,108 @@ internal sealed class ListExpression : RuleExpression
 
         return RuleValueKind.List;
     }
+}
+
+/// <summary>FR-5 §6.2 CEL map literal expression: {"key": expr, ...}.</summary>
+internal sealed class MapLiteralExpression : RuleExpression
+{
+    private readonly IReadOnlyList<(RuleExpression Key, RuleExpression Value)> _entries;
+
+    /// <summary>FR-5 §6.2 constructs a map literal from a list of key/value expression pairs.</summary>
+    public MapLiteralExpression(IReadOnlyList<(RuleExpression Key, RuleExpression Value)> entries, int position)
+        : base(position)
+    {
+        _entries = entries;
+    }
+
+    public override object? Evaluate(RuleEvaluationContext context)
+    {
+        var result = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach ((RuleExpression keyExpr, RuleExpression valueExpr) in _entries)
+        {
+            string key = RuleValueConversions.RequireString(keyExpr.Evaluate(context));
+            object? value = valueExpr.Evaluate(context);
+            result[key] = value;
+        }
+
+        return result;
+    }
+
+    public override RuleValueKind InferType()
+    {
+        foreach ((RuleExpression keyExpr, RuleExpression valueExpr) in _entries)
+        {
+            RuleValueKind keyKind = keyExpr.InferType();
+            if (keyKind is not RuleValueKind.String and not RuleValueKind.Unknown)
+            {
+                throw new RulePredicateTypeException("Map literal keys must be string expressions.", Position);
+            }
+
+            _ = valueExpr.InferType();
+        }
+
+        return RuleValueKind.Map;
+    }
+}
+
+/// <summary>FR-5 §6.2 CEL index expression: expr["key"] or expr[index].</summary>
+internal sealed class IndexExpression : RuleExpression
+{
+    private readonly RuleExpression _target;
+    private readonly RuleExpression _index;
+
+    /// <summary>FR-5 §6.2 constructs an index access expression.</summary>
+    public IndexExpression(RuleExpression target, RuleExpression index, int position)
+        : base(position)
+    {
+        _target = target;
+        _index = index;
+    }
+
+    public override object? Evaluate(RuleEvaluationContext context)
+    {
+        object? target = _target.Evaluate(context);
+        object? indexValue = _index.Evaluate(context);
+
+        if (indexValue is string keyString)
+        {
+            if (RuleEvaluationContext.TryReadMember(target, keyString, out object? memberValue))
+            {
+                return memberValue;
+            }
+
+            return null;
+        }
+
+        if (RuleValueConversions.TryConvertToInt(indexValue, out int intIndex))
+        {
+            if (target is IList<object?> list)
+            {
+                if (intIndex < 0 || intIndex >= list.Count)
+                {
+                    throw new RulePredicateEvaluationException(
+                        string.Concat("Index ", intIndex.ToString(System.Globalization.CultureInfo.InvariantCulture), " is out of range."));
+                }
+
+                return list[intIndex];
+            }
+
+            if (target is System.Collections.IList plainList)
+            {
+                if (intIndex < 0 || intIndex >= plainList.Count)
+                {
+                    throw new RulePredicateEvaluationException(
+                        string.Concat("Index ", intIndex.ToString(System.Globalization.CultureInfo.InvariantCulture), " is out of range."));
+                }
+
+                return plainList[intIndex];
+            }
+        }
+
+        throw new RulePredicateEvaluationException("Index expression requires a string key or integer index.");
+    }
+
+    public override RuleValueKind InferType() => RuleValueKind.Unknown;
 }
 
 internal enum UnaryOperator
@@ -1184,6 +1289,19 @@ internal static class RuleValueConversions
         };
     }
 
+    /// <summary>FR-5 §6.2 attempts to convert a value to an integer index for list access.</summary>
+    public static bool TryConvertToInt(object? value, out int result)
+    {
+        if (TryConvertNumber(value, out decimal number) && number == Math.Truncate(number))
+        {
+            result = (int)number;
+            return true;
+        }
+
+        result = 0;
+        return false;
+    }
+
     private static bool TryConvertNumber(object? value, out decimal number)
     {
         switch (value)
@@ -1468,6 +1586,12 @@ internal enum TokenKind
     Dot,
     QuestionMark,
     Colon,
+
+    /// <summary>FR-5 §6.2 left brace for map literals.</summary>
+    LeftBrace,
+
+    /// <summary>FR-5 §6.2 right brace for map literals.</summary>
+    RightBrace,
 }
 
 internal readonly record struct Token(TokenKind Kind, string Text, int Position);
@@ -1661,20 +1785,34 @@ internal sealed class RulePredicateParser
     private RuleExpression ParsePostfix()
     {
         RuleExpression expression = ParsePrimary();
-        while (Match(TokenKind.Dot, out Token dot))
+        while (true)
         {
-            Token member = Expect(TokenKind.Identifier, "Expected member name after '.'.");
-            if (IsMacroName(member.Text) && Match(TokenKind.OpenParen, out _))
+            if (Match(TokenKind.Dot, out Token dot))
             {
-                Token variable = Expect(TokenKind.Identifier, "Expected macro variable name.");
-                Expect(TokenKind.Comma, "Expected ',' after macro variable name.");
-                RuleExpression predicate = ParseTernary();
-                Expect(TokenKind.CloseParen, "Expected ')' after macro predicate.");
-                expression = new MacroExpression(expression, member.Text, variable.Text, predicate, dot.Position);
+                Token member = Expect(TokenKind.Identifier, "Expected member name after '.'.");
+                if (IsMacroName(member.Text) && Match(TokenKind.OpenParen, out _))
+                {
+                    Token variable = Expect(TokenKind.Identifier, "Expected macro variable name.");
+                    Expect(TokenKind.Comma, "Expected ',' after macro variable name.");
+                    RuleExpression predicate = ParseTernary();
+                    Expect(TokenKind.CloseParen, "Expected ')' after macro predicate.");
+                    expression = new MacroExpression(expression, member.Text, variable.Text, predicate, dot.Position);
+                    continue;
+                }
+
+                expression = new MemberAccessExpression(expression, member.Text, dot.Position);
                 continue;
             }
 
-            expression = new MemberAccessExpression(expression, member.Text, dot.Position);
+            if (Match(TokenKind.OpenBracket, out Token indexBracket))
+            {
+                RuleExpression index = ParseTernary();
+                Expect(TokenKind.CloseBracket, "Expected ']' after index expression.");
+                expression = new IndexExpression(expression, index, indexBracket.Position);
+                continue;
+            }
+
+            break;
         }
 
         return expression;
@@ -1725,6 +1863,11 @@ internal sealed class RulePredicateParser
             return ParseList(bracket.Position);
         }
 
+        if (Match(TokenKind.LeftBrace, out Token brace))
+        {
+            return ParseMapLiteral(brace.Position);
+        }
+
         if (Match(TokenKind.OpenParen, out _))
         {
             RuleExpression expression = ParseTernary();
@@ -1767,6 +1910,29 @@ internal sealed class RulePredicateParser
         }
 
         return new ListExpression(new ReadOnlyCollection<RuleExpression>(items), position);
+    }
+
+    /// <summary>FR-5 §6.2 parses a CEL map literal: { "key": expr, ... }.</summary>
+    private MapLiteralExpression ParseMapLiteral(int position)
+    {
+        var entries = new List<(RuleExpression Key, RuleExpression Value)>();
+        if (!Match(TokenKind.RightBrace, out _))
+        {
+            do
+            {
+                RuleExpression key = ParseTernary();
+                Expect(TokenKind.Colon, "Expected ':' after map key.");
+                RuleExpression value = ParseTernary();
+                entries.Add((key, value));
+            }
+            while (Match(TokenKind.Comma, out _));
+
+            Expect(TokenKind.RightBrace, "Expected '}' after map literal.");
+        }
+
+        return new MapLiteralExpression(
+            new ReadOnlyCollection<(RuleExpression Key, RuleExpression Value)>(entries),
+            position);
     }
 
     private bool Match(TokenKind kind, out Token token)
@@ -1864,6 +2030,8 @@ internal sealed class RulePredicateLexer
             '|' when TryConsume('|') => new Token(TokenKind.Or, "||", start),
             '?' => new Token(TokenKind.QuestionMark, "?", start),
             ':' => new Token(TokenKind.Colon, ":", start),
+            '{' => new Token(TokenKind.LeftBrace, "{", start),
+            '}' => new Token(TokenKind.RightBrace, "}", start),
             _ => throw new RulePredicateParseException(
                 string.Concat("Unexpected character '", current.ToString(), "'."), start),
         };

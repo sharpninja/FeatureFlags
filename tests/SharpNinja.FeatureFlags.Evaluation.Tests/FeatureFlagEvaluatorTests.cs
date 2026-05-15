@@ -276,6 +276,45 @@ public sealed class FeatureFlagEvaluatorTests
         Assert.Equal(EvaluationReason.Default, result.Reason);
     }
 
+    /// <summary>FR-5 §6.2 verifies that a CEL map literal can be indexed by string key.</summary>
+    [Fact]
+    public void EvaluateSupportsMapLiteralIndexAccess()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(MapLiteralManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "map-index", false);
+
+        Assert.True(result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
+    /// <summary>FR-5 §6.2 verifies that a CEL map literal member is accessible via dot notation.</summary>
+    [Fact]
+    public void EvaluateSupportsMapLiteralMemberAccess()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(MapLiteralManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "map-member", false);
+
+        Assert.True(result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
+    /// <summary>FR-5 §6.2 verifies that a map literal can supply bounds inside a filter expression.</summary>
+    [Fact]
+    public void EvaluateSupportsMapLiteralInFilterExpression()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(MapLiteralManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "map-filter", false);
+
+        Assert.True(result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
     private static readonly string[] AdminRoles = ["driver", "admin"];
 
     private const string TernaryManifestJson = """
@@ -348,6 +387,56 @@ public sealed class FeatureFlagEvaluatorTests
               "rules": [
                 {
                   "when": "tags.map(t, t).exists(t, t == 'admin')",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        }
+        """;
+
+    private const string MapLiteralManifestJson = """
+        {
+          "schemaVersion": 1,
+          "productId": "truckmate",
+          "releaseId": "2026.05.14",
+          "environment": "Development",
+          "flags": [
+            {
+              "key": "map-index",
+              "type": "boolean",
+              "defaultValue": false,
+              "killable": false,
+              "productScope": [ "truckmate" ],
+              "rules": [
+                {
+                  "when": "{\"a\": 1, \"b\": 2}[\"a\"] == 1",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "key": "map-member",
+              "type": "boolean",
+              "defaultValue": false,
+              "killable": false,
+              "productScope": [ "truckmate" ],
+              "rules": [
+                {
+                  "when": "{\"x\": true}.x == true",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "key": "map-filter",
+              "type": "boolean",
+              "defaultValue": false,
+              "killable": false,
+              "productScope": [ "truckmate" ],
+              "rules": [
+                {
+                  "when": "[1, 2, 3].filter(n, {\"min\": 1, \"max\": 2}[\"min\"] <= n && n <= {\"min\": 1, \"max\": 2}[\"max\"]).exists(n, n == 1)",
                   "value": true
                 }
               ]
