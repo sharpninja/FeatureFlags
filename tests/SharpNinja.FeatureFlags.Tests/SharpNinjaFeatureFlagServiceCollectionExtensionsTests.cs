@@ -196,6 +196,27 @@ public sealed class SharpNinjaFeatureFlagServiceCollectionExtensionsTests
         Assert.True(File.Exists(options.ManifestCachePath));
     }
 
+    /// <summary>FR-3 TR-6 TR-10 TR-11 verifies non-forced refresh passes forceRefresh=false to the remote client and records an updated status.</summary>
+    /// <remarks>FR-3 normal cadence refresh must not signal kill-switch urgency to the remote client; only ForceRefreshAsync sets forceRefresh=true.</remarks>
+    [Fact]
+    public async Task AdminRefreshAsyncPassesNonForcedFlagToRemoteClient()
+    {
+        SharpNinjaFeatureFlagOptions options = CreateOptions();
+        var remoteClient = new StubRemoteManifestClient(CreateEnvelope(RemoteManifestJson));
+
+        using ServiceProvider provider = CreateProvider(
+            options,
+            services => services.AddSingleton<ISharpNinjaRemoteManifestClient>(remoteClient));
+        ISharpNinjaFeatureFlagAdmin admin = provider.GetRequiredService<ISharpNinjaFeatureFlagAdmin>();
+
+        await admin.RefreshAsync();
+        DiagnosticSnapshot diagnostics = admin.GetDiagnostics();
+
+        Assert.False(remoteClient.LastForceRefresh);
+        Assert.Equal(ManifestRefreshStatus.Updated, diagnostics.LastRefreshStatus);
+        Assert.Null(diagnostics.LastRefreshError);
+    }
+
     /// <summary>FR-3 TR-4 TR-6 TR-10 TR-11 verifies rejected remote manifests leave the bundled manifest active.</summary>
     [Fact]
     public async Task AdminForceRefreshRetainsActiveManifestWhenSignatureFails()

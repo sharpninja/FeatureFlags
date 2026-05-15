@@ -173,6 +173,13 @@ public static class ManifestValidator
         return text;
     }
 
+    /// <remarks>
+    /// FR-11 design note: The admin plane supports custom environment names for authoring workflows.
+    /// Before a draft is published to a manifest, the admin normalizes custom environment names to one
+    /// of the three canonical values (Development, Staging, Production). Manifests therefore always
+    /// carry one of these three values, and this validator enforces that contract. Custom environment
+    /// names never appear in published manifests; they exist only in the admin-plane draft lifecycle.
+    /// </remarks>
     private static void ValidateEnvironment(string? environment, List<ManifestValidationError> errors)
     {
         if (environment is null)

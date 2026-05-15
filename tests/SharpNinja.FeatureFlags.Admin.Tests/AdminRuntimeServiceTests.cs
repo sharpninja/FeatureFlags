@@ -79,6 +79,33 @@ public sealed class AdminRuntimeServiceTests
         Assert.Equal("Promote validated draft to staging", promotionAudit.Reason);
     }
 
+    /// <summary>FR-9 TR-9: PublishAsync records a Published audit entry for an existing draft.</summary>
+    /// <remarks>FR-9 requires that every publish action is immutably recorded in the audit trail.</remarks>
+    [Fact]
+    public async Task PublishAsyncAppendsPublishedAuditEntryForExistingDraft()
+    {
+        using ServiceProvider provider = CreateProvider();
+        IAdminRuntimeService runtime = provider.GetRequiredService<IAdminRuntimeService>();
+
+        await runtime.CreateDraftAsync(CreateMutation(defaultValue: "false", reason: "Initial draft"));
+
+        AdminAuditEntry publishEntry = await runtime.PublishAsync(new FeatureFlagPublishAction(
+            "checkout.enabled",
+            "development",
+            "Approved for production rollout",
+            CreateRbac()));
+
+        IReadOnlyList<AdminAuditEntry> auditTrail = runtime.GetAuditTrail();
+
+        Assert.Equal(AdminAuditAction.Published, publishEntry.Action);
+        Assert.Equal("checkout.enabled", publishEntry.FlagKey);
+        Assert.Equal("development", publishEntry.EnvironmentName);
+        Assert.Equal("Approved for production rollout", publishEntry.Reason);
+        Assert.Equal(2, auditTrail.Count);
+        Assert.Equal(AdminAuditAction.Created, auditTrail[0].Action);
+        Assert.Equal(AdminAuditAction.Published, auditTrail[1].Action);
+    }
+
     /// <summary>Per-Product RBAC metadata is enforced and preserved on successful audit entries.</summary>
     [Fact]
     public async Task RbacProductScopeIsEnforcedAndTenantMetadataIsAudited()
