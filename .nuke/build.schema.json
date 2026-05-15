@@ -27,6 +27,7 @@
         "Compile",
         "Test",
         "ValidateConfig",
+        "ValidateRelease",
         "ValidateTraceability"
       ]
     },
