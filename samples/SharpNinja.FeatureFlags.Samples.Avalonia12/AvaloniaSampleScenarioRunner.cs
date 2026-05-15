@@ -9,17 +9,17 @@ public static class AvaloniaSampleScenarioRunner
 {
     private const string DashboardEnabledFeatureKey = "dashboard.enabled";
     private const string ReportsTitleFeatureKey = "reports.title";
-    private const string AlphaProjectId = "alpha";
-    private const string BetaProjectId = "beta";
+    private const string TruckMateProjectId = SharpNinjaProductCatalog.TruckMate;
+    private const string DriverMateProjectId = SharpNinjaProductCatalog.DriverMate;
     private const string DashboardDefaultText = "Dashboard default fallback";
     private const string ReportsDefaultTitle = "Reports default fallback";
-    private static readonly string[] ProjectIds = [AlphaProjectId, BetaProjectId];
-    private static readonly string[] SupportedProductIds = ["sample-suite", AlphaProjectId, BetaProjectId];
+    private static readonly string[] ProjectIds = [TruckMateProjectId, DriverMateProjectId];
 
-    private const string ManifestJson = """
+    private static string CreateManifestJson(string productId) =>
+        $$"""
         {
           "schemaVersion": 1,
-          "productId": "sample-suite",
+          "productId": "{{productId}}",
           "releaseId": "avalonia12-sample",
           "environment": "Development",
           "flags": [
@@ -28,10 +28,10 @@ public static class AvaloniaSampleScenarioRunner
               "type": "boolean",
               "defaultValue": false,
               "killable": true,
-              "productScope": [ "sample-suite" ],
+              "productScope": [ "{{productId}}" ],
               "rules": [
                 {
-                  "when": "project.id == 'alpha'",
+                  "when": "project.id == 'truckmate'",
                   "value": true
                 }
               ]
@@ -41,11 +41,11 @@ public static class AvaloniaSampleScenarioRunner
               "type": "string",
               "defaultValue": "Reports default fallback",
               "killable": false,
-              "productScope": [ "sample-suite", "alpha" ],
+              "productScope": [ "{{productId}}" ],
               "rules": [
                 {
-                  "when": "project.id == 'alpha'",
-                  "value": "Alpha Reports"
+                  "when": "project.id == 'truckmate'",
+                  "value": "TruckMate Reports"
                 }
               ]
             }
@@ -61,7 +61,7 @@ public static class AvaloniaSampleScenarioRunner
 
         foreach (string projectId in ProjectIds)
         {
-            using ServiceProvider provider = CreateProvider();
+            using ServiceProvider provider = CreateProvider(projectId);
             ISharpNinjaFeatureClient client = provider.GetRequiredService<ISharpNinjaFeatureClient>();
             EvaluationContext context = CreateContext(projectId);
 
@@ -96,51 +96,48 @@ public static class AvaloniaSampleScenarioRunner
     public static IReadOnlyList<AvaloniaSampleScenarioOutput> GetExpectedOutputs() =>
     [
         new(
-            AlphaProjectId,
+            TruckMateProjectId,
             DashboardEnabledFeatureKey,
-            "alpha dashboard.enabled Dashboard enabled: enabled (RuleMatch)",
+            "truckmate dashboard.enabled Dashboard enabled: enabled (RuleMatch)",
             "enabled",
             nameof(EvaluationReason.RuleMatch)),
         new(
-            AlphaProjectId,
+            TruckMateProjectId,
             ReportsTitleFeatureKey,
-            "alpha reports.title Reports title: Alpha Reports (RuleMatch)",
-            "Alpha Reports",
+            "truckmate reports.title Reports title: TruckMate Reports (RuleMatch)",
+            "TruckMate Reports",
             nameof(EvaluationReason.RuleMatch)),
         new(
-            BetaProjectId,
+            DriverMateProjectId,
             DashboardEnabledFeatureKey,
             string.Concat(
-                "beta dashboard.enabled Dashboard enabled: ",
+                "drivermate dashboard.enabled Dashboard enabled: ",
                 DashboardDefaultText,
                 " (Default)"),
             DashboardDefaultText,
             nameof(EvaluationReason.Default)),
         new(
-            BetaProjectId,
+            DriverMateProjectId,
             ReportsTitleFeatureKey,
             string.Concat(
-                "beta reports.title Reports title: ",
+                "drivermate reports.title Reports title: ",
                 ReportsDefaultTitle,
                 " (Default)"),
             ReportsDefaultTitle,
             nameof(EvaluationReason.Default)),
     ];
 
-    private static ServiceProvider CreateProvider()
+    private static ServiceProvider CreateProvider(string productId)
     {
         ServiceCollection services = new();
         services.AddSharpNinjaFeatureFlags(
             new SharpNinjaFeatureFlagOptions(
-                "sample-suite",
+                productId,
                 "avalonia12-sample",
                 "Development",
                 TimeSpan.FromMinutes(5),
-                TimeSpan.FromMinutes(5))
-            {
-                SupportedProductIds = SupportedProductIds,
-            },
-            ManifestJson);
+                TimeSpan.FromMinutes(5)),
+            CreateManifestJson(productId));
 
         return services.BuildServiceProvider();
     }

@@ -1,3 +1,4 @@
+using SharpNinja.FeatureFlags.Abstractions.Options;
 using SharpNinja.FeatureFlags.Samples.Avalonia12;
 using Xunit;
 
@@ -6,14 +7,19 @@ namespace SharpNinja.FeatureFlags.Avalonia12.IntegrationTests;
 /// <summary>Integration tests for the Avalonia 12 sample scenario runner.</summary>
 public sealed class AvaloniaSampleScenarioRunnerTests
 {
-    private static readonly string[] ExpectedProjectIds = ["alpha", "beta"];
+    private static readonly string[] ExpectedProjectIds =
+    [
+        SharpNinjaProductCatalog.DriverMate,
+        SharpNinjaProductCatalog.TruckMate,
+    ];
+
     private static readonly string[] ExpectedFeatureKeys = ["dashboard.enabled", "reports.title"];
     private static readonly (string ProjectId, string FeatureKey)[] ExpectedOrder =
     [
-        ("alpha", "dashboard.enabled"),
-        ("alpha", "reports.title"),
-        ("beta", "dashboard.enabled"),
-        ("beta", "reports.title"),
+        (SharpNinjaProductCatalog.TruckMate, "dashboard.enabled"),
+        (SharpNinjaProductCatalog.TruckMate, "reports.title"),
+        (SharpNinjaProductCatalog.DriverMate, "dashboard.enabled"),
+        (SharpNinjaProductCatalog.DriverMate, "reports.title"),
     ];
 
     /// <summary>Verifies that the sample covers the required Projects and Features matrix.</summary>
@@ -38,13 +44,13 @@ public sealed class AvaloniaSampleScenarioRunnerTests
         Assert.Equal(expected, actual);
     }
 
-    /// <summary>Verifies beta reports do not match the alpha project rule and use the default fallback.</summary>
+    /// <summary>Verifies DriverMate reports do not match the TruckMate project rule and use the default fallback.</summary>
     [Fact]
-    public void GetOutputsBetaReportsTitleUsesDefaultFallback()
+    public void GetOutputsDriverMateReportsTitleUsesDefaultFallback()
     {
         AvaloniaSampleScenarioOutput output = Assert.Single(
             AvaloniaSampleScenarioRunner.GetOutputs(),
-            scenario => scenario.ProjectId == "beta" && scenario.FeatureKey == "reports.title");
+            scenario => scenario.ProjectId == SharpNinjaProductCatalog.DriverMate && scenario.FeatureKey == "reports.title");
 
         Assert.Equal("Reports default fallback", output.ResolvedValue);
         Assert.Equal("Default", output.Reason);
