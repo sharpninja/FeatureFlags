@@ -565,7 +565,7 @@ The chosen import model for v1 is a **vendor-folder copy**:
 
 1. The relevant projects under `f:\github\McpServer\` (the CQRS dispatcher, handler/behavior contracts, pipeline composition, registration helpers, and their existing test suite) are copied into this repository under `src/SharpNinja.FeatureFlags.Cqrs/` and `tests/SharpNinja.FeatureFlags.Cqrs.Tests/`.
 2. The root namespace is renamed mechanically (Roslyn-driven find/replace plus targeted manual review for string literals in tests and diagnostics) to `SharpNinja.FeatureFlags.Cqrs.*`.
-3. The upstream link is **severed at v1**. Future divergence is owned by this repository. A revisit of the upstream relationship — selective backports to McpServer, periodic re-sync, or a managed hard-fork with sync tooling — is an open question for v0.2 and beyond, deferred until the v1 adaptation has stabilized.
+3. The upstream link is **severed at v1**. Future divergence is owned by this repository. The resolved v1 decision is permanent ownership of the `SharpNinja.FeatureFlags.Cqrs` fork, with no planned upstream sync obligation.
 
 Alternatives considered: git submodule (rejected for v1 because every flag-aware adaptation becomes a multi-repo concern that blocks shipping); hard fork with periodic upstream sync (rejected for v1 on the same grounds, viable for v2 if the upstream system continues evolving in ways this project wants to track); leaving the code in McpServer and referencing it as a project reference across repos (rejected as fragile under independent versioning).
 
@@ -835,7 +835,7 @@ All behaviors are DI-resident and comply with TR-11 and §7. The upstream system
 
 #### 6.10.7 What v1 does not include
 
-No upstream-sync tooling. The vendor copy diverges from McpServer at adoption with the §6.10.2.3 adaptations applied; reconciliation is a v2 concern (see §13 open questions).
+No upstream-sync tooling. The vendor copy diverges from McpServer at adoption with the §6.10.2.3 adaptations applied; this repository owns that divergence permanently for FeatureFlags.
 
 No event-sourcing primitives. Event sourcing is orthogonal to CQRS-dispatch and would require its own design; the dispatcher remains request/response only in v1.
 
@@ -1007,7 +1007,7 @@ The 4NF-decomposition cost risk (more tables, more joins, more verbose repositor
 
 The CQRS-adaptation risk (the vendored copy of `f:\github\McpServer\` brings in hidden assumptions about its host environment or non-DI patterns that violate TR-11 and §7) is mitigated by the §6.10.2 structured discovery pass: all violations are catalogued in `docs/cqrs-adaptation-delta.md` and remediated **before** any flag-aware extension lands. Sub-task 6.2 in Phase 6 explicitly gates flag-awareness work on the upstream code passing the same DI/logging conformance checks the rest of the ecosystem honours.
 
-The upstream-divergence risk (the vendored copy diverges from McpServer over time and useful upstream improvements are missed, or McpServer absorbs adaptations that should have been contributed back) is accepted at v1 as the price of unblocking shipping. Reconciliation is an open question in §13 for v0.2. The discovery delta documents the v1 divergence baseline so future re-sync work has a known starting point.
+The upstream-divergence risk (the vendored copy diverges from McpServer over time and useful upstream improvements are missed, or McpServer absorbs adaptations that should have been contributed back) is accepted at v1 as the price of unblocking shipping. The resolved v1 strategy is permanent FeatureFlags ownership of the fork; the discovery delta documents the v1 divergence baseline for historical traceability.
 
 The handler-variant-explosion risk (CQRS makes it almost too easy to add a fifth variant of `CheckoutCommandHandler` without retiring the prior four) is the flagship feature-creep failure mode this project exists to prevent. Mitigations: §6.9's `SNFF0008`/`SNFF0010`/`SNFF0011` diagnostics fire on expired, sunsetting, and unused flags at consumer build time, turning stale handler variants into visible build noise; the admin plane's flag-lifecycle UI surfaces handler-variant flags with no recent exposure; the two-person production-publish rule applies to lifecycle transitions, so a flag cannot be silently extended forever without review. Variant-handler explosion is treated as a workflow problem the system actively surfaces, not a technical problem the dispatcher solves.
 
@@ -1043,7 +1043,7 @@ Is multi-tenant deployment in scope for v1? The `Tenant` column in the `Entities
 
 Resolved 2026-05-14: multi-tenant deployment is in scope for v1.
 
-What is the long-term relationship between this repository's vendored CQRS copy and the upstream `sharpninja/McpServer` repository? Options for v0.2 onward: (a) accept permanent divergence and own the code outright; (b) periodic upstream-sync with backports for non-flag-specific improvements; (c) selective contribution of flag-agnostic adaptations back to McpServer while keeping flag-aware extensions exclusive to this repository. The choice affects how the adaptation delta is structured during Phase 6 discovery — option (c) requires the delta to clearly separate flag-aware from non-flag-aware changes from the first commit.
+What is the long-term relationship between this repository's vendored CQRS copy and the upstream `sharpninja/McpServer` repository? Options considered: (a) accept permanent divergence and own the code outright; (b) periodic upstream-sync with backports for non-flag-specific improvements; (c) selective contribution of flag-agnostic adaptations back to McpServer while keeping flag-aware extensions exclusive to this repository.
 
 Resolved 2026-05-14: choose option (a). This repository owns the CQRS fork permanently. The vendored CQRS code is maintained as SharpNinja feature-flag infrastructure, with no expected periodic upstream sync or contribution-back obligation to `sharpninja/McpServer`. This repository's implementation is the forward path; `McpServer.Cqrs` will be deprecated in favor of `SharpNinja.FeatureFlags.Cqrs`.
 

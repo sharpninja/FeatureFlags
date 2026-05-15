@@ -2,8 +2,12 @@
 
 This project is licensed under Apache-2.0.
 
-## Future Vendored Components
+## Adapted Components
 
-### McpServer.Cqrs
+### SharpNinja.FeatureFlags.Cqrs
 
-Phase 6 is expected to vendor and adapt `McpServer.Cqrs` from `F:\GitHub\McpServer\src\McpServer.Cqrs\` under Apache-2.0. When that happens, this file must be updated with the source commit, copied license notices, and any required NOTICE content.
+`SharpNinja.FeatureFlags.Cqrs` is the FeatureFlags-owned fork of the in-house `McpServer.Cqrs` implementation from `F:\GitHub\McpServer\src\McpServer.Cqrs\`.
+
+The fork is maintained permanently in this repository under the `SharpNinja.FeatureFlags.Cqrs` namespace. `McpServer.Cqrs` is deprecated in favor of this implementation for FeatureFlags v1 and later.
+
+Source baseline inspected for v1 reconciliation: `F:\GitHub\McpServer` commit `7f9aeb487fcc9b297b766716fedc1ee473b2e968`.
