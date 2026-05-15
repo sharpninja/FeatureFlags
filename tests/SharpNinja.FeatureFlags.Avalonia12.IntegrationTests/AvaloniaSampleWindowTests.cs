@@ -6,7 +6,7 @@ using Xunit;
 
 namespace SharpNinja.FeatureFlags.Avalonia12.IntegrationTests;
 
-/// <summary>Rendered-window integration tests for the Avalonia 12 sample.</summary>
+/// <summary>FR-4 TR-11 TEST-AVALONIA-SAMPLE-001 rendered-window integration tests for the Avalonia 12 sample.</summary>
 public sealed class AvaloniaSampleWindowTests
 {
     /// <summary>Verifies that the sample window data-binds every expected display text.</summary>

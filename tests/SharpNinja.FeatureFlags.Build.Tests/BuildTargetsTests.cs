@@ -3,7 +3,7 @@ using Xunit;
 
 namespace SharpNinja.FeatureFlags.Build.Tests;
 
-/// <summary>Tests for the build-transitive MSBuild integration surface.</summary>
+/// <summary>FR-2 TR-1 TR-4 TR-6 TR-8 TR-11 tests for the build-transitive MSBuild integration surface.</summary>
 public sealed class BuildTargetsTests
 {
     private static readonly string TargetsPath = Path.GetFullPath(

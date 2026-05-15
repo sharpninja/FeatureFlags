@@ -4,7 +4,7 @@ using Xunit;
 
 namespace SharpNinja.FeatureFlags.Cli.Tests;
 
-/// <summary>FR-12 tests for the flagctl validate command wiring.</summary>
+/// <summary>FR-12 TR-8 tests for the flagctl validate command wiring.</summary>
 public sealed class FlagctlValidateCommandTests
 {
     /// <summary>Help arguments print usage and return success.</summary>

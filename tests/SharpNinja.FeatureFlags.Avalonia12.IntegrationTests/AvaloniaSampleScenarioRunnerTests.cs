@@ -4,7 +4,7 @@ using Xunit;
 
 namespace SharpNinja.FeatureFlags.Avalonia12.IntegrationTests;
 
-/// <summary>Integration tests for the Avalonia 12 sample scenario runner.</summary>
+/// <summary>FR-4 TR-2 TR-3 TR-5 TR-11 TEST-AVALONIA-SAMPLE-001 integration tests for the Avalonia 12 sample scenario runner.</summary>
 public sealed class AvaloniaSampleScenarioRunnerTests
 {
     private static readonly string[] ExpectedProjectIds =
