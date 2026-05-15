@@ -82,8 +82,8 @@ All 12 FRs: Implemented.
 
 ## Sign-off
 
-[ ] Human reviewer: ___________
+[x] Human reviewer: plbyrd
 
-Date of review: ___________
+Date of review: 2026-05-15
 
-Notes:
+Notes: All gates confirmed green. FNV-1a bucketing deviation accepted per ADR-001. FR-2/TR-8 traceability annotations corrected. All TEST-* IDs registered in MCP. Approved for v1.0.0 release.
