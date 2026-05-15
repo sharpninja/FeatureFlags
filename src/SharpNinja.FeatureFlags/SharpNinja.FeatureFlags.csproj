@@ -7,6 +7,11 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <IsPackable>true</IsPackable>
+    <PackageId>SharpNinja.FeatureFlags</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>SharpNinja</Authors>
+    <Description>Client SDK for the SharpNinja Feature Flags system: manifest loading, offline-first evaluation, and DI registration.</Description>
   </PropertyGroup>
 
   <ItemGroup>

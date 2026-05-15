@@ -7,6 +7,11 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <IsPackable>true</IsPackable>
+    <PackageId>SharpNinja.FeatureFlags.Abstractions</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>SharpNinja</Authors>
+    <Description>Core abstractions for the SharpNinja Feature Flags SDK: flag types, evaluation context, and provider interfaces.</Description>
   </PropertyGroup>
 
   <ItemGroup>

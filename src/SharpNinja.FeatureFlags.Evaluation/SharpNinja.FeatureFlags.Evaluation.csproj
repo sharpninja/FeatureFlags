@@ -7,6 +7,11 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <IsPackable>true</IsPackable>
+    <PackageId>SharpNinja.FeatureFlags.Evaluation</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>SharpNinja</Authors>
+    <Description>AOT-safe CEL-dialect rule evaluator for the SharpNinja Feature Flags SDK.</Description>
   </PropertyGroup>
 
   <ItemGroup>

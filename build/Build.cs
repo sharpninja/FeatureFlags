@@ -50,6 +50,209 @@ sealed class Build : NukeBuild
         .DependsOn(Compile)
         .Executes(ValidateTraceabilitySummaries);
 
+    /// <summary>Validates that all v1 release artifacts are correctly configured for NuGet packaging and Docker image production.</summary>
+    Target ValidateRelease => _ => _
+        .DependsOn(Compile)
+        .Executes(ValidateReleaseArtifacts);
+
+    /// <summary>
+    /// Projects in src/ that must ship as NuGet library packages in v1.
+    /// Admin and Distribution are Docker-hosted services, not library packages.
+    /// Admin.Data.Sqlite is excluded per the resolved v1 provider decision.
+    /// Cli ships as a dotnet tool (PackAsTool), validated separately.
+    /// </summary>
+    static readonly string[] V1NuGetProjects =
+    [
+        "SharpNinja.FeatureFlags.Abstractions",
+        "SharpNinja.FeatureFlags.Evaluation",
+        "SharpNinja.FeatureFlags",
+        "SharpNinja.FeatureFlags.Manifest",
+        "SharpNinja.FeatureFlags.Cqrs",
+        "SharpNinja.FeatureFlags.Build",
+        "SharpNinja.FeatureFlags.Admin.Data",
+        "SharpNinja.FeatureFlags.Admin.Data.Postgres",
+        "SharpNinja.FeatureFlags.Admin.Data.SqlServer",
+    ];
+
+    /// <summary>
+    /// Projects that are Docker-hosted services. Each must have a Dockerfile alongside its project file.
+    /// </summary>
+    static readonly string[] V1DockerProjects =
+    [
+        "SharpNinja.FeatureFlags.Admin",
+        "SharpNinja.FeatureFlags.Distribution",
+    ];
+
+    /// <summary>
+    /// Test-only and dev-only package IDs that must never appear as non-private references
+    /// in a v1 NuGet release package.
+    /// </summary>
+    static readonly string[] ForbiddenReleasePackages =
+    [
+        "Microsoft.NET.Test.Sdk",
+        "xunit",
+        "xunit.runner.visualstudio",
+        "coverlet.collector",
+        "Moq",
+        "NSubstitute",
+    ];
+
+    static void ValidateReleaseArtifacts()
+    {
+        List<string> violations = [];
+
+        ValidateV1NuGetPackagingMetadata(violations);
+        ValidateV1DockerArtifacts(violations);
+        ValidateNoDebugPackagesLeakedIntoReleaseProjects(violations);
+        ValidateSqliteNotPackagedAsV1NuGet(violations);
+        ValidateCliPackedAsTool(violations);
+
+        if (violations.Count > 0)
+        {
+            throw new InvalidOperationException(
+                string.Concat(
+                    "Release validation failed:",
+                    Environment.NewLine,
+                    string.Join(Environment.NewLine, violations.Order(StringComparer.Ordinal).Select(v => string.Concat(" - ", v)))));
+        }
+
+        Serilog.Log.Information(
+            "Release validation passed: {NuGetCount} NuGet packages and {DockerCount} Docker service projects verified.",
+            V1NuGetProjects.Length,
+            V1DockerProjects.Length);
+    }
+
+    static void ValidateV1NuGetPackagingMetadata(List<string> violations)
+    {
+        foreach (string projectName in V1NuGetProjects)
+        {
+            string projectFile = RootDirectory / "src" / projectName / $"{projectName}.csproj";
+            if (!File.Exists(projectFile))
+            {
+                violations.Add($"Missing v1 NuGet project file: src/{projectName}/{projectName}.csproj");
+                continue;
+            }
+
+            XDocument doc = XDocument.Load(projectFile);
+            string relativePath = Path.GetRelativePath(RootDirectory, projectFile);
+
+            string? isPackable = doc.Descendants("IsPackable").FirstOrDefault()?.Value;
+            if (!string.Equals(isPackable, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                violations.Add($"{relativePath}: must set <IsPackable>true</IsPackable> for NuGet release.");
+            }
+
+            string? packageId = doc.Descendants("PackageId").FirstOrDefault()?.Value;
+            if (string.IsNullOrWhiteSpace(packageId))
+            {
+                violations.Add($"{relativePath}: must set a non-empty <PackageId>.");
+            }
+
+            string? version = doc.Descendants("Version").FirstOrDefault()?.Value;
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                violations.Add($"{relativePath}: must set a non-empty <Version>.");
+            }
+
+            string? authors = doc.Descendants("Authors").FirstOrDefault()?.Value;
+            if (string.IsNullOrWhiteSpace(authors))
+            {
+                violations.Add($"{relativePath}: must set a non-empty <Authors>.");
+            }
+
+            string? description = doc.Descendants("Description").FirstOrDefault()?.Value;
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                violations.Add($"{relativePath}: must set a non-empty <Description>.");
+            }
+        }
+    }
+
+    static void ValidateV1DockerArtifacts(List<string> violations)
+    {
+        foreach (string projectName in V1DockerProjects)
+        {
+            string dockerfilePath = RootDirectory / "src" / projectName / "Dockerfile";
+            if (!File.Exists(dockerfilePath))
+            {
+                violations.Add($"Missing Dockerfile for Docker-hosted service: src/{projectName}/Dockerfile");
+            }
+        }
+    }
+
+    static void ValidateNoDebugPackagesLeakedIntoReleaseProjects(List<string> violations)
+    {
+        foreach (string projectName in V1NuGetProjects)
+        {
+            string projectFile = RootDirectory / "src" / projectName / $"{projectName}.csproj";
+            if (!File.Exists(projectFile))
+            {
+                continue;
+            }
+
+            XDocument doc = XDocument.Load(projectFile);
+            string relativePath = Path.GetRelativePath(RootDirectory, projectFile);
+
+            string[] leakedRefs = doc.Descendants("PackageReference")
+                .Where(element =>
+                {
+                    string id = element.Attribute("Include")?.Value ?? string.Empty;
+                    string privateAssets = element.Attribute("PrivateAssets")?.Value
+                        ?? element.Element("PrivateAssets")?.Value
+                        ?? string.Empty;
+                    return ForbiddenReleasePackages.Any(forbidden =>
+                            string.Equals(id, forbidden, StringComparison.OrdinalIgnoreCase))
+                        && !string.Equals(privateAssets, "all", StringComparison.OrdinalIgnoreCase);
+                })
+                .Select(element => element.Attribute("Include")?.Value ?? "<unknown>")
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+
+            foreach (string leaked in leakedRefs)
+            {
+                violations.Add($"{relativePath}: dev/test-only package '{leaked}' must use PrivateAssets=\"all\" or be removed from release projects.");
+            }
+        }
+    }
+
+    static void ValidateSqliteNotPackagedAsV1NuGet(List<string> violations)
+    {
+        string sqliteProject = RootDirectory / "src" / "SharpNinja.FeatureFlags.Admin.Data.Sqlite" / "SharpNinja.FeatureFlags.Admin.Data.Sqlite.csproj";
+        if (!File.Exists(sqliteProject))
+        {
+            return;
+        }
+
+        XDocument doc = XDocument.Load(sqliteProject);
+        string? isPackable = doc.Descendants("IsPackable").FirstOrDefault()?.Value;
+        if (string.Equals(isPackable, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            violations.Add("src/SharpNinja.FeatureFlags.Admin.Data.Sqlite: must not set <IsPackable>true</IsPackable>; SQLite is excluded from v1 NuGet shipping.");
+        }
+    }
+
+    static void ValidateCliPackedAsTool(List<string> violations)
+    {
+        string cliProject = RootDirectory / "src" / "SharpNinja.FeatureFlags.Cli" / "SharpNinja.FeatureFlags.Cli.csproj";
+        if (!File.Exists(cliProject))
+        {
+            return;
+        }
+
+        XDocument doc = XDocument.Load(cliProject);
+        string? isPackable = doc.Descendants("IsPackable").FirstOrDefault()?.Value;
+        if (!string.Equals(isPackable, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        string? packAsTool = doc.Descendants("PackAsTool").FirstOrDefault()?.Value;
+        if (!string.Equals(packAsTool, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            violations.Add("src/SharpNinja.FeatureFlags.Cli: is marked IsPackable=true but does not set <PackAsTool>true</PackAsTool>; the CLI must ship as a dotnet tool, not a plain library package.");
+        }
+    }
+
     static void ValidateTraceabilitySummaries()
     {
         string[] roots =

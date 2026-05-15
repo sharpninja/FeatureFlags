@@ -8,6 +8,11 @@
     <IsTrimmable>true</IsTrimmable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsPackable>true</IsPackable>
+    <PackageId>SharpNinja.FeatureFlags.Build</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>SharpNinja</Authors>
+    <Description>MSBuild integration package for the SharpNinja Feature Flags SDK: build-transitive targets for manifest embedding, signing, and compile-time product identity stamping.</Description>
   </PropertyGroup>
 
   <ItemGroup>

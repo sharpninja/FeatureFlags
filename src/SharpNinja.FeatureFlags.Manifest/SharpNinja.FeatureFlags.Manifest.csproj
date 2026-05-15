@@ -7,6 +7,11 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <IsPackable>true</IsPackable>
+    <PackageId>SharpNinja.FeatureFlags.Manifest</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>SharpNinja</Authors>
+    <Description>Manifest schema, Ed25519 signature verification, and bundled-default embedding support for the SharpNinja Feature Flags SDK.</Description>
   </PropertyGroup>
 
   <ItemGroup>

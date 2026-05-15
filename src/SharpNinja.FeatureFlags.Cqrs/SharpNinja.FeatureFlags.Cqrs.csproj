@@ -7,6 +7,11 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <IsPackable>true</IsPackable>
+    <PackageId>SharpNinja.FeatureFlags.Cqrs</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>SharpNinja</Authors>
+    <Description>CQRS command and query contracts for the SharpNinja Feature Flags admin plane.</Description>
   </PropertyGroup>
 
   <ItemGroup>
