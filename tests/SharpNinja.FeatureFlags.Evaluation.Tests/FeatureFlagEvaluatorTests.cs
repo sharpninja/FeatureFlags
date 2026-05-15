@@ -159,7 +159,202 @@ public sealed class FeatureFlagEvaluatorTests
         }
     }
 
+    /// <summary>FR-5 verifies CEL ternary operator with a boolean condition returning a string result.</summary>
+    [Fact]
+    public void EvaluateSupportsTernaryOperatorWithBooleanCondition()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(TernaryManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+        EvaluationContext context = EvaluationContext.Builder()
+            .Set("score", 75)
+            .Build();
+
+        EvaluationResult<string> result = evaluator.Evaluate(manifest, "truckmate", "ternary-basic", "fallback", context);
+
+        Assert.Equal("high", result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
+    /// <summary>FR-5 verifies CEL ternary operator with false condition selects the else branch.</summary>
+    [Fact]
+    public void EvaluateSupportsTernaryOperatorFalseBranchSelection()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(TernaryManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+        EvaluationContext context = EvaluationContext.Builder()
+            .Set("score", 30)
+            .Build();
+
+        EvaluationResult<string> result = evaluator.Evaluate(manifest, "truckmate", "ternary-basic", "fallback", context);
+
+        Assert.Equal("low", result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
+    /// <summary>FR-5 verifies CEL ternary operator used inside a boolean comparison (nested ternary).</summary>
+    [Fact]
+    public void EvaluateSupportsTernaryOperatorNestedInBooleanComparison()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(TernaryManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+        EvaluationContext context = EvaluationContext.Builder()
+            .Set("score", 90)
+            .Set("tier", "gold")
+            .Build();
+
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "ternary-nested", false, context);
+
+        Assert.True(result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
+    /// <summary>FR-5 verifies the CEL filter macro returns elements that satisfy the predicate.</summary>
+    [Fact]
+    public void EvaluateSupportsFilterMacroReturningMatchingElements()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(MacroManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+        EvaluationContext context = EvaluationContext.Builder()
+            .Set("scores", new List<object?> { 10, 60, 80, 40, 90 })
+            .Build();
+
+        // filter(scores, s, s > 50) has 3 elements (60, 80, 90); exists checks .exists(s, s > 50) => true
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "filter-macro", false, context);
+
+        Assert.True(result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
+    /// <summary>FR-5 verifies the CEL filter macro with no matching elements produces an empty list.</summary>
+    [Fact]
+    public void EvaluateSupportsFilterMacroWithNoMatchingElementsProducesEmptyList()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(MacroManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+        EvaluationContext context = EvaluationContext.Builder()
+            .Set("scores", new List<object?> { 10, 20, 30 })
+            .Build();
+
+        // filter(scores, s, s > 50) is empty; exists checks .exists(s, s > 50) => false
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "filter-macro", false, context);
+
+        Assert.False(result.Value);
+        Assert.Equal(EvaluationReason.Default, result.Reason);
+    }
+
+    /// <summary>FR-5 verifies the CEL map macro transforms each element and the result is usable.</summary>
+    [Fact]
+    public void EvaluateSupportsMapMacroTransformingElements()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(MacroManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+        EvaluationContext context = EvaluationContext.Builder()
+            .Set("tags", new List<object?> { "admin", "viewer", "editor" })
+            .Build();
+
+        // map(tags, t, t) chains with exists(t, t == 'admin') => true
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "map-macro", false, context);
+
+        Assert.True(result.Value);
+        Assert.Equal(EvaluationReason.RuleMatch, result.Reason);
+    }
+
+    /// <summary>FR-5 verifies the CEL map macro with no matching value in mapped list.</summary>
+    [Fact]
+    public void EvaluateSupportsMapMacroWithNoMatchInMappedList()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(MacroManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+        EvaluationContext context = EvaluationContext.Builder()
+            .Set("tags", new List<object?> { "viewer", "editor" })
+            .Build();
+
+        // map(tags, t, t).exists(t, t == 'admin') => false
+        EvaluationResult<bool> result = evaluator.Evaluate(manifest, "truckmate", "map-macro", false, context);
+
+        Assert.False(result.Value);
+        Assert.Equal(EvaluationReason.Default, result.Reason);
+    }
+
     private static readonly string[] AdminRoles = ["driver", "admin"];
+
+    private const string TernaryManifestJson = """
+        {
+          "schemaVersion": 1,
+          "productId": "truckmate",
+          "releaseId": "2026.05.14",
+          "environment": "Development",
+          "flags": [
+            {
+              "key": "ternary-basic",
+              "type": "string",
+              "defaultValue": "none",
+              "killable": false,
+              "productScope": [ "truckmate" ],
+              "rules": [
+                {
+                  "when": "(score >= 50 ? 'high' : 'low') == 'high'",
+                  "value": "high"
+                },
+                {
+                  "when": "(score >= 50 ? 'high' : 'low') == 'low'",
+                  "value": "low"
+                }
+              ]
+            },
+            {
+              "key": "ternary-nested",
+              "type": "boolean",
+              "defaultValue": false,
+              "killable": false,
+              "productScope": [ "truckmate" ],
+              "rules": [
+                {
+                  "when": "(score >= 80 ? (tier == 'gold' ? true : false) : false) == true",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        }
+        """;
+
+    private const string MacroManifestJson = """
+        {
+          "schemaVersion": 1,
+          "productId": "truckmate",
+          "releaseId": "2026.05.14",
+          "environment": "Development",
+          "flags": [
+            {
+              "key": "filter-macro",
+              "type": "boolean",
+              "defaultValue": false,
+              "killable": false,
+              "productScope": [ "truckmate" ],
+              "rules": [
+                {
+                  "when": "scores.filter(s, s > 50).exists(s, s > 50)",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "key": "map-macro",
+              "type": "boolean",
+              "defaultValue": false,
+              "killable": false,
+              "productScope": [ "truckmate" ],
+              "rules": [
+                {
+                  "when": "tags.map(t, t).exists(t, t == 'admin')",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        }
+        """;
 
     private const string ManifestJson = """
         {

@@ -705,6 +705,58 @@ internal sealed class BinaryExpression : RuleExpression
         actual == RuleValueKind.Unknown || actual == expected;
 }
 
+/// <summary>FR-5 CEL ternary expression: condition ? thenBranch : elseBranch.</summary>
+internal sealed class TernaryExpression : RuleExpression
+{
+    private readonly RuleExpression _condition;
+    private readonly RuleExpression _thenBranch;
+    private readonly RuleExpression _elseBranch;
+
+    /// <summary>FR-5 constructs a ternary expression node.</summary>
+    public TernaryExpression(
+        RuleExpression condition,
+        RuleExpression thenBranch,
+        RuleExpression elseBranch,
+        int position)
+        : base(position)
+    {
+        _condition = condition;
+        _thenBranch = thenBranch;
+        _elseBranch = elseBranch;
+    }
+
+    public override object? Evaluate(RuleEvaluationContext context)
+    {
+        bool condition = RuleValueConversions.RequireBoolean(_condition.Evaluate(context));
+        return condition ? _thenBranch.Evaluate(context) : _elseBranch.Evaluate(context);
+    }
+
+    public override RuleValueKind InferType()
+    {
+        RuleValueKind conditionKind = _condition.InferType();
+        if (conditionKind is not RuleValueKind.Boolean and not RuleValueKind.Unknown)
+        {
+            throw new RulePredicateTypeException(
+                "Ternary condition must evaluate to a boolean value.", Position);
+        }
+
+        RuleValueKind thenKind = _thenBranch.InferType();
+        RuleValueKind elseKind = _elseBranch.InferType();
+
+        if (thenKind == elseKind)
+        {
+            return thenKind;
+        }
+
+        if (thenKind == RuleValueKind.Unknown || elseKind == RuleValueKind.Unknown)
+        {
+            return thenKind == RuleValueKind.Unknown ? elseKind : thenKind;
+        }
+
+        return RuleValueKind.Unknown;
+    }
+}
+
 internal sealed class FunctionExpression : RuleExpression
 {
     private readonly string _functionName;
@@ -868,6 +920,17 @@ internal sealed class MacroExpression : RuleExpression
     public override object? Evaluate(RuleEvaluationContext context)
     {
         object? target = _target.Evaluate(context);
+
+        if (_macroName == "filter")
+        {
+            return EvaluateFilter(context, target);
+        }
+
+        if (_macroName == "map")
+        {
+            return EvaluateMap(context, target);
+        }
+
         bool any = false;
         bool all = true;
         int matches = 0;
@@ -917,12 +980,61 @@ internal sealed class MacroExpression : RuleExpression
         };
     }
 
+    /// <summary>FR-5 filter(list, var, predicate) - returns a new list containing only elements for which predicate is true.</summary>
+    private List<object?> EvaluateFilter(RuleEvaluationContext context, object? target)
+    {
+        var result = new List<object?>();
+        int iterations = 0;
+        foreach (object? item in RuleValueConversions.Enumerate(target))
+        {
+            iterations++;
+            if (iterations > MaxIterations)
+            {
+                throw new RulePredicateEvaluationException("Macro iteration limit exceeded.");
+            }
+
+            bool matches = RuleValueConversions.RequireBoolean(
+                _predicate.Evaluate(context.WithVariable(_variableName, item)));
+            if (matches)
+            {
+                result.Add(item);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>FR-5 map(list, var, expr) - returns a new list by applying expr to each element.</summary>
+    private List<object?> EvaluateMap(RuleEvaluationContext context, object? target)
+    {
+        var result = new List<object?>();
+        int iterations = 0;
+        foreach (object? item in RuleValueConversions.Enumerate(target))
+        {
+            iterations++;
+            if (iterations > MaxIterations)
+            {
+                throw new RulePredicateEvaluationException("Macro iteration limit exceeded.");
+            }
+
+            result.Add(_predicate.Evaluate(context.WithVariable(_variableName, item)));
+        }
+
+        return result;
+    }
+
     public override RuleValueKind InferType()
     {
         RuleValueKind target = _target.InferType();
         if (target is not RuleValueKind.List and not RuleValueKind.Unknown)
         {
             throw new RulePredicateTypeException("Macros require a list or context collection target.", Position);
+        }
+
+        if (_macroName == "filter" || _macroName == "map")
+        {
+            _ = _predicate.InferType();
+            return RuleValueKind.List;
         }
 
         RuleValueKind predicate = _predicate.InferType();
@@ -1354,6 +1466,8 @@ internal enum TokenKind
     CloseBracket,
     Comma,
     Dot,
+    QuestionMark,
+    Colon,
 }
 
 internal readonly record struct Token(TokenKind Kind, string Text, int Position);
@@ -1371,9 +1485,24 @@ internal sealed class RulePredicateParser
 
     public RuleExpression Parse()
     {
-        RuleExpression expression = ParseOr();
+        RuleExpression expression = ParseTernary();
         Expect(TokenKind.End, "Unexpected token after expression.");
         return expression;
+    }
+
+    /// <summary>FR-5 parses a right-associative CEL ternary operator: condition ? thenBranch : elseBranch.</summary>
+    private RuleExpression ParseTernary()
+    {
+        RuleExpression condition = ParseOr();
+        if (!Match(TokenKind.QuestionMark, out Token questionMark))
+        {
+            return condition;
+        }
+
+        RuleExpression thenBranch = ParseTernary();
+        Expect(TokenKind.Colon, "Expected ':' in ternary operator.");
+        RuleExpression elseBranch = ParseTernary();
+        return new TernaryExpression(condition, thenBranch, elseBranch, questionMark.Position);
     }
 
     private RuleExpression ParseOr()
@@ -1539,7 +1668,7 @@ internal sealed class RulePredicateParser
             {
                 Token variable = Expect(TokenKind.Identifier, "Expected macro variable name.");
                 Expect(TokenKind.Comma, "Expected ',' after macro variable name.");
-                RuleExpression predicate = ParseOr();
+                RuleExpression predicate = ParseTernary();
                 Expect(TokenKind.CloseParen, "Expected ')' after macro predicate.");
                 expression = new MacroExpression(expression, member.Text, variable.Text, predicate, dot.Position);
                 continue;
@@ -1598,7 +1727,7 @@ internal sealed class RulePredicateParser
 
         if (Match(TokenKind.OpenParen, out _))
         {
-            RuleExpression expression = ParseOr();
+            RuleExpression expression = ParseTernary();
             Expect(TokenKind.CloseParen, "Expected ')' after expression.");
             return expression;
         }
@@ -1613,7 +1742,7 @@ internal sealed class RulePredicateParser
         {
             do
             {
-                arguments.Add(ParseOr());
+                arguments.Add(ParseTernary());
             }
             while (Match(TokenKind.Comma, out _));
 
@@ -1630,7 +1759,7 @@ internal sealed class RulePredicateParser
         {
             do
             {
-                items.Add(ParseOr());
+                items.Add(ParseTernary());
             }
             while (Match(TokenKind.Comma, out _));
 
@@ -1667,7 +1796,9 @@ internal sealed class RulePredicateParser
         string.Equals(name, "exists", StringComparison.Ordinal)
         || string.Equals(name, "all", StringComparison.Ordinal)
         || string.Equals(name, "exists_one", StringComparison.Ordinal)
-        || string.Equals(name, "existsOne", StringComparison.Ordinal);
+        || string.Equals(name, "existsOne", StringComparison.Ordinal)
+        || string.Equals(name, "filter", StringComparison.Ordinal)
+        || string.Equals(name, "map", StringComparison.Ordinal);
 
     private RulePredicateParseException Error(string message) =>
         new(message, _current.Position);
@@ -1731,6 +1862,8 @@ internal sealed class RulePredicateLexer
             '>' => new Token(TokenKind.GreaterThan, ">", start),
             '&' when TryConsume('&') => new Token(TokenKind.And, "&&", start),
             '|' when TryConsume('|') => new Token(TokenKind.Or, "||", start),
+            '?' => new Token(TokenKind.QuestionMark, "?", start),
+            ':' => new Token(TokenKind.Colon, ":", start),
             _ => throw new RulePredicateParseException(
                 string.Concat("Unexpected character '", current.ToString(), "'."), start),
         };
