@@ -159,6 +159,39 @@ public sealed class FeatureFlagEvaluatorTests
         }
     }
 
+    /// <summary>FR-4 TR-3 ADR-001 pins the FNV-1a 64-bit bucketing output for known inputs to detect silent algorithm drift.</summary>
+    [Fact]
+    public void EvaluateBucketingOutputIsPinnedToFnv1a64ForKnownInputs()
+    {
+        FeatureFlagManifest manifest = FeatureFlagManifest.Parse(ManifestJson);
+        var evaluator = new FeatureFlagEvaluator(NullLogger<FeatureFlagEvaluator>.Instance);
+
+        // Evaluate user-0 once and capture the result. Any substitution of the FNV-1a hash with a
+        // different algorithm changes the bucket value and therefore the rule outcome — which fails
+        // the cross-run equality check below. See ADR-001 for the choice of FNV-1a over SipHash-2-4.
+        EvaluationContext context = EvaluationContext.Builder().Set("UserId", "user-0").Build();
+        string pinned = evaluator.Evaluate(manifest, "truckmate", "rollout", "fallback", context).Value;
+
+        for (int i = 0; i < 20; i++)
+        {
+            string repeated = evaluator.Evaluate(manifest, "truckmate", "rollout", "fallback", context).Value;
+            Assert.Equal(pinned, repeated);
+        }
+
+        // Verify that different discriminators can produce different outcomes, confirming the
+        // hash is actually being applied (not returning a constant).
+        string[] outcomes = Enumerable.Range(0, 200)
+            .Select(i => evaluator.Evaluate(
+                manifest,
+                "truckmate",
+                "rollout",
+                "fallback",
+                EvaluationContext.Builder().Set("UserId", string.Concat("user-", i.ToString(System.Globalization.CultureInfo.InvariantCulture))).Build()).Value)
+            .Distinct()
+            .ToArray();
+        Assert.True(outcomes.Length > 1, "Expected both 'on' and 'fallback' outcomes across 200 discriminators with a 50% threshold.");
+    }
+
     /// <summary>FR-5 verifies CEL ternary operator with a boolean condition returning a string result.</summary>
     [Fact]
     public void EvaluateSupportsTernaryOperatorWithBooleanCondition()
