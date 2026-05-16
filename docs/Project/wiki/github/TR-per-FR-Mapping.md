@@ -14,3 +14,7 @@
 | FR-10 | TR-10, TR-11, TR-5, TR-9 | TEST-ADMIN-RUNTIME-001; TEST-DISTRIBUTION-RUNTIME-001; TEST-MANIFEST-VALIDATION-001 |
 | FR-11 | TR-10, TR-11, TR-9 | TEST-ABSTRACTIONS-V1-001; TEST-ADMIN-DATA-PROVIDERS-001; TEST-DOCKER-HOSTING-001 |
 | FR-12 | TR-1, TR-11, TR-2, TR-8 | TEST-BUILD-PIPELINE-001; TEST-CLI-VALIDATION-001; TEST-MANIFEST-VALIDATION-001 |
+
+## Cross-cutting technical requirements
+
+TR-12 (public XML documentation with FR/TR deeplinks) applies to every public surface across every FR. It is not listed in the per-FR rows above to avoid noise; it is enforced uniformly by `Directory.Build.props` (CS1591 escalated to error) and by an `ArchitectureTests` rule that verifies FR/TR backreferences in `<summary>` are paired with GitHub deeplinks in `<remarks>`.
