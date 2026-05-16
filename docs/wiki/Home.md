@@ -22,6 +22,7 @@ SharpNinja Feature Flags is a compile-time-scoped, offline-first feature flag SD
 
 - [MSBuild Integration](MSBuild-Integration) - Properties, targets, source generation, and CI setup.
 - [CLI Reference](CLI-Reference) - `flagctl validate` options, exit codes, and diagnostic codes.
+- [Submodule Integration](Submodule-Integration) - Consume source directly via git submodule, ProjectReference wiring, and local `flagctl` build.
 
 ### Infrastructure
 
