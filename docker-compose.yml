@@ -67,6 +67,21 @@ services:
     networks:
       - featureflags
 
+  ngrok:
+    image: ngrok/ngrok:latest
+    command: start --all --config /etc/ngrok/ngrok.yml
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    volumes:
+      - ./ngrok.yml:/etc/ngrok/ngrok.yml:ro
+    ports:
+      - "4040:4040"
+    depends_on:
+      - admin
+      - distribution
+    networks:
+      - featureflags
+
   postgres:
     image: postgres:16
     environment:

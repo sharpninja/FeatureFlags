@@ -1,0 +1,28 @@
+# ngrok tunnel configuration for SharpNinja Feature Flags
+#
+# Usage:
+#   Set NGROK_AUTHTOKEN in your .env file (see .env.example).
+#   Then run: docker compose up ngrok
+#
+# The ngrok web inspection UI is available at http://localhost:4040 once running.
+# Tunnel URLs are printed in the ngrok container logs and shown in the web UI.
+#
+# Requires an ngrok account: https://dashboard.ngrok.com/get-started/your-authtoken
+# Multiple simultaneous tunnels require ngrok Free or paid plan.
+
+version: "3"
+
+tunnels:
+  admin:
+    proto: http
+    addr: admin:8080
+    schemes:
+      - https
+    inspect: true
+
+  distribution:
+    proto: http
+    addr: distribution:8080
+    schemes:
+      - https
+    inspect: true

@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Admin\SharpNinja.FeatureFlags.Admin.csproj" />
   </ItemGroup>
 </Project>
