@@ -54,6 +54,9 @@ public sealed class CallContext : ILogger, IDisposable
     /// <summary>Arbitrary properties bag for pipeline behaviors to share state.</summary>
     public ConcurrentDictionary<string, object?> Properties { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>FR-12 TR-11: Snapshot of feature-flag evaluations captured by <see cref="FlagSnapshotBehavior{TRequest,TResult}"/>.</summary>
+    public ConcurrentDictionary<string, bool> FlagSnapshot { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Cancellation token for this call.</summary>
     public CancellationToken CancellationToken { get; set; }
 

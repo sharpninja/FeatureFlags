@@ -1,0 +1,81 @@
+@page "/flags/publish"
+@using System.ComponentModel.DataAnnotations
+@using SharpNinja.FeatureFlags.Abstractions.Options
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Publish flag</PageTitle>
+
+<h1>Publish flag draft</h1>
+
+<EditForm Model="form" OnValidSubmit="SubmitAsync" FormName="publish-flag">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Flag key
+            <InputText @bind-Value="form.FlagKey" data-testid="flag-key" />
+        </label>
+        <ValidationMessage For="@(() => form.FlagKey)" />
+    </div>
+    <div>
+        <label>Environment
+            <InputText @bind-Value="form.EnvironmentName" data-testid="env-name" />
+        </label>
+        <ValidationMessage For="@(() => form.EnvironmentName)" />
+    </div>
+    <div>
+        <label>Reason
+            <InputText @bind-Value="form.Reason" data-testid="reason" />
+        </label>
+        <ValidationMessage For="@(() => form.Reason)" />
+    </div>
+
+    <button type="submit" data-testid="submit">Publish</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p data-testid="status">@statusMessage</p>
+}
+
+@code {
+    private readonly PublishFormModel form = new();
+    private string statusMessage = string.Empty;
+
+    private async Task SubmitAsync()
+    {
+        AdminRbacMetadata metadata = new(
+            "tenant-default",
+            "blazor-user",
+            new[] { SharpNinjaProductCatalog.TruckMate },
+            new[] { AdminRoleNames.Publisher, AdminRoleNames.Editor });
+
+        FeatureFlagPublishAction action = new(form.FlagKey, form.EnvironmentName, form.Reason, metadata);
+
+        try
+        {
+            AdminAuditEntry entry = await Runtime.PublishAsync(action).ConfigureAwait(false);
+            statusMessage = $"Published sequence {entry.Sequence} for '{entry.FlagKey}' in '{entry.EnvironmentName}'.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            statusMessage = ex.Message;
+        }
+    }
+
+    /// <summary>Form model for the publish page.</summary>
+    public sealed class PublishFormModel
+    {
+        /// <summary>Flag key.</summary>
+        [Required]
+        public string FlagKey { get; set; } = string.Empty;
+
+        /// <summary>Environment name.</summary>
+        [Required]
+        public string EnvironmentName { get; set; } = string.Empty;
+
+        /// <summary>Reason for publishing.</summary>
+        [Required]
+        public string Reason { get; set; } = string.Empty;
+    }
+}

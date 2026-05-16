@@ -1,0 +1,159 @@
+@page "/flags/edit"
+@page "/flags/edit/{FlagKey}/{EnvironmentName}"
+@using System.ComponentModel.DataAnnotations
+@using SharpNinja.FeatureFlags.Abstractions.Options
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Edit flag</PageTitle>
+
+<h1>Edit flag draft</h1>
+
+<EditForm Model="form" OnValidSubmit="SubmitAsync" FormName="edit-flag">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Flag key
+            <InputText @bind-Value="form.FlagKey" data-testid="flag-key" />
+        </label>
+        <ValidationMessage For="@(() => form.FlagKey)" />
+    </div>
+    <div>
+        <label>Environment
+            <InputText @bind-Value="form.EnvironmentName" data-testid="env-name" />
+        </label>
+        <ValidationMessage For="@(() => form.EnvironmentName)" />
+    </div>
+    <div>
+        <label>Default value
+            <InputText @bind-Value="form.DefaultValue" data-testid="default-value" />
+        </label>
+        <ValidationMessage For="@(() => form.DefaultValue)" />
+    </div>
+    <div>
+        <label>Reason
+            <InputText @bind-Value="form.Reason" data-testid="reason" />
+        </label>
+        <ValidationMessage For="@(() => form.Reason)" />
+    </div>
+    <div>
+        <label>Rule descriptions (one per line)
+            <InputTextArea @bind-Value="form.RuleDescriptions" data-testid="rules" />
+        </label>
+    </div>
+
+    <button type="submit" data-testid="submit">Save</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p data-testid="status">@statusMessage</p>
+}
+
+@code {
+    /// <summary>Optional route parameter for the flag key to edit.</summary>
+    [Parameter]
+    public string? FlagKey { get; set; }
+
+    /// <summary>Optional route parameter for the environment name to edit.</summary>
+    [Parameter]
+    public string? EnvironmentName { get; set; }
+
+    private readonly EditFlagFormModel form = new();
+    private string statusMessage = string.Empty;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(FlagKey) || string.IsNullOrEmpty(EnvironmentName))
+        {
+            return;
+        }
+
+        FeatureFlagDraft? draft = Runtime.GetDrafts()
+            .FirstOrDefault(d =>
+                string.Equals(d.FlagKey, FlagKey, StringComparison.Ordinal)
+                && string.Equals(d.EnvironmentName, EnvironmentName, StringComparison.Ordinal));
+
+        if (draft is null)
+        {
+            statusMessage = $"Draft '{FlagKey}' in '{EnvironmentName}' not found.";
+            return;
+        }
+
+        form.FlagKey = draft.FlagKey;
+        form.EnvironmentName = draft.EnvironmentName;
+        form.DefaultValue = draft.DefaultValue;
+        form.ValueType = draft.ValueType;
+        form.ProductScope = string.Join(',', draft.ProductScope);
+        form.RuleDescriptions = string.Join("\n", draft.RuleDescriptions);
+    }
+
+    private async Task SubmitAsync()
+    {
+        string[] productIds = form.ProductScope
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (productIds.Length == 0)
+        {
+            productIds = new[] { SharpNinjaProductCatalog.TruckMate };
+        }
+
+        string[] rules = (form.RuleDescriptions ?? string.Empty)
+            .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        AdminRbacMetadata metadata = new(
+            "tenant-default",
+            "blazor-user",
+            productIds,
+            new[] { AdminRoleNames.Editor });
+
+        FeatureFlagDraftMutation mutation = new(
+            form.FlagKey,
+            form.EnvironmentName,
+            productIds,
+            form.ValueType,
+            form.DefaultValue,
+            rules,
+            form.Reason,
+            metadata);
+
+        try
+        {
+            FeatureFlagDraft draft = await Runtime.UpdateDraftAsync(mutation).ConfigureAwait(false);
+            statusMessage = $"Updated '{draft.FlagKey}' to revision {draft.Revision}.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            statusMessage = ex.Message;
+        }
+    }
+
+    /// <summary>Form model for the edit draft page.</summary>
+    public sealed class EditFlagFormModel
+    {
+        /// <summary>Flag key.</summary>
+        [Required]
+        public string FlagKey { get; set; } = string.Empty;
+
+        /// <summary>Environment name.</summary>
+        [Required]
+        public string EnvironmentName { get; set; } = string.Empty;
+
+        /// <summary>Default value.</summary>
+        [Required]
+        public string DefaultValue { get; set; } = string.Empty;
+
+        /// <summary>Reason for edit.</summary>
+        [Required]
+        public string Reason { get; set; } = string.Empty;
+
+        /// <summary>Value type captured for the mutation.</summary>
+        public string ValueType { get; set; } = "boolean";
+
+        /// <summary>Comma separated product scope.</summary>
+        public string ProductScope { get; set; } = SharpNinjaProductCatalog.TruckMate;
+
+        /// <summary>Rule descriptions, newline separated.</summary>
+        public string? RuleDescriptions { get; set; }
+    }
+}

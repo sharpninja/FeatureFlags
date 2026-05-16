@@ -1,0 +1,68 @@
+@page "/metrics"
+@using SharpNinja.FeatureFlags.Experimentation
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Metrics</PageTitle>
+
+<h1>Metrics</h1>
+
+<section class="admin-metrics">
+    <p data-testid="m-drafts">Drafts: @metrics.DraftCount</p>
+    <p data-testid="m-audit">Audit entries: @metrics.AuditEntryCount</p>
+    <p data-testid="m-publish">Publishes: @metrics.PublishCount</p>
+    <p data-testid="m-promote">Promotions: @metrics.PromotionCount</p>
+</section>
+
+<h2>Experimentation</h2>
+
+@if (experimentResult is null)
+{
+    <p data-testid="experiment-empty">No experiment analysis available.</p>
+}
+else
+{
+    <table class="experiment-table">
+        <thead>
+            <tr>
+                <th>Variant</th>
+                <th>Conversion rate</th>
+                <th>Lift</th>
+                <th>p-value</th>
+                <th>Significant</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (VariantAnalysisResult variant in experimentResult.VariantResults)
+            {
+                <tr data-testid="experiment-row">
+                    <td>@variant.VariantKey</td>
+                    <td>@variant.ConversionRate.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)</td>
+                    <td>@variant.RelativeLift.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)</td>
+                    <td>@variant.PValue.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)</td>
+                    <td>@variant.IsStatisticallySignificant</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    /// <summary>Optional experiment result passed in by integration hosts.</summary>
+    [Parameter]
+    public ExperimentAnalysisResult? ExperimentResult { get; set; }
+
+    private AdminRuntimeMetrics metrics = new(0, 0, 0, 0);
+    private ExperimentAnalysisResult? experimentResult;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        metrics = Runtime.GetMetrics();
+    }
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        experimentResult = ExperimentResult;
+    }
+}

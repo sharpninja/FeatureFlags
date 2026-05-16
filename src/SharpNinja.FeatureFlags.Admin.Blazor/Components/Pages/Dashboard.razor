@@ -1,0 +1,46 @@
+@page "/"
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1>Dashboard</h1>
+
+<section class="dashboard-summary">
+    <p data-testid="draft-count">Drafts: @metrics.DraftCount</p>
+    <p data-testid="audit-count">Audit Entries: @metrics.AuditEntryCount</p>
+    <p data-testid="publish-count">Publishes: @metrics.PublishCount</p>
+    <p data-testid="promotion-count">Promotions: @metrics.PromotionCount</p>
+</section>
+
+<h2>Flags per environment</h2>
+<table class="dashboard-environments">
+    <thead>
+        <tr><th>Environment</th><th>Draft count</th></tr>
+    </thead>
+    <tbody>
+        @foreach (KeyValuePair<string, int> entry in flagsPerEnvironment)
+        {
+            <tr data-testid="env-row-@entry.Key">
+                <td>@entry.Key</td>
+                <td>@entry.Value</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private AdminRuntimeMetrics metrics = new(0, 0, 0, 0);
+    private readonly Dictionary<string, int> flagsPerEnvironment = new(StringComparer.Ordinal);
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        metrics = Runtime.GetMetrics();
+        flagsPerEnvironment.Clear();
+        foreach (FeatureFlagDraft draft in Runtime.GetDrafts())
+        {
+            flagsPerEnvironment[draft.EnvironmentName] =
+                flagsPerEnvironment.TryGetValue(draft.EnvironmentName, out int existing) ? existing + 1 : 1;
+        }
+    }
+}

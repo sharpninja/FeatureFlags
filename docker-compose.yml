@@ -67,6 +67,28 @@ services:
     networks:
       - featureflags
 
+  admin-blazor:
+    build:
+      context: .
+      dockerfile: src/SharpNinja.FeatureFlags.Admin.Blazor/Dockerfile
+    image: sharpninja-featureflags-admin-blazor:dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:-featureflags_dev_password}
+      FeatureFlags__Products__0: TruckMate
+      FeatureFlags__Products__1: DriverMate
+      FeatureFlags__Tenancy__Mode: MultiTenant
+    depends_on:
+      postgres:
+        condition: service_healthy
+      admin:
+        condition: service_started
+    ports:
+      - "18082:8080"
+    networks:
+      - featureflags
+
   ngrok:
     image: ngrok/ngrok:latest
     command: start --all --config /etc/ngrok/ngrok.yml

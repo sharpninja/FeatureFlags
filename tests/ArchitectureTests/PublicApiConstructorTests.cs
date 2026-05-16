@@ -1,5 +1,8 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Migrations;
 using SharpNinja.FeatureFlags.Abstractions;
 using Xunit;
 
@@ -111,6 +114,31 @@ public sealed class PublicApiConstructorTests
         }
 
         if (type.Namespace?.Contains(".Abstractions.Options", StringComparison.Ordinal) == true)
+        {
+            return false;
+        }
+
+        // EF Core requires Migration subclasses and design-time DbContext factories to be public with default ctors.
+        if (typeof(Migration).IsAssignableFrom(type))
+        {
+            return false;
+        }
+
+        if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDesignTimeDbContextFactory<>)))
+        {
+            return false;
+        }
+
+        // Blazor component subclasses (including Razor-compiled partials) are instantiated by the renderer
+        // and require a public default constructor.
+        if (typeof(ComponentBase).IsAssignableFrom(type))
+        {
+            return false;
+        }
+
+        // Razor _Imports.razor compiles into a public type used only as a directive carrier; the renderer
+        // never instantiates it directly.
+        if (string.Equals(type.Name, "_Imports", StringComparison.Ordinal))
         {
             return false;
         }

@@ -1,0 +1,25 @@
+@page "/rbac"
+
+<PageTitle>RBAC</PageTitle>
+
+<h1>RBAC</h1>
+
+<p>This Admin shell uses the following canonical role grants.</p>
+
+<ul class="rbac-list">
+    <li data-testid="role-viewer"><strong>@AdminRoleNames.Viewer</strong>: read access to drafts, audit entries, and metrics.</li>
+    <li data-testid="role-editor"><strong>@AdminRoleNames.Editor</strong>: create and update flag drafts.</li>
+    <li data-testid="role-publisher"><strong>@AdminRoleNames.Publisher</strong>: publish drafts to runtime stores.</li>
+    <li data-testid="role-promoter"><strong>@AdminRoleNames.Promoter</strong>: promote drafts between environments.</li>
+    <li data-testid="role-keyadmin"><strong>@AdminRoleNames.KeyAdmin</strong>: administer product API keys and bypass per-operation role checks.</li>
+</ul>
+
+<h2>Authorization policies</h2>
+
+<ul class="policy-list">
+    <li data-testid="policy-read">@AdminPolicyNames.Read</li>
+    <li data-testid="policy-edit">@AdminPolicyNames.Edit</li>
+    <li data-testid="policy-publish">@AdminPolicyNames.Publish</li>
+    <li data-testid="policy-promote">@AdminPolicyNames.Promote</li>
+    <li data-testid="policy-keyadmin">@AdminPolicyNames.KeyAdmin</li>
+</ul>

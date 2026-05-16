@@ -1,0 +1,122 @@
+@page "/flags/create"
+@using System.ComponentModel.DataAnnotations
+@using SharpNinja.FeatureFlags.Abstractions.Options
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Create flag</PageTitle>
+
+<h1>Create flag draft</h1>
+
+<EditForm Model="form" OnValidSubmit="SubmitAsync" FormName="create-flag">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Flag key
+            <InputText @bind-Value="form.FlagKey" data-testid="flag-key" />
+        </label>
+        <ValidationMessage For="@(() => form.FlagKey)" />
+    </div>
+    <div>
+        <label>Environment
+            <InputText @bind-Value="form.EnvironmentName" data-testid="env-name" />
+        </label>
+        <ValidationMessage For="@(() => form.EnvironmentName)" />
+    </div>
+    <div>
+        <label>Product scope (comma separated)
+            <InputText @bind-Value="form.ProductScope" data-testid="product-scope" />
+        </label>
+        <ValidationMessage For="@(() => form.ProductScope)" />
+    </div>
+    <div>
+        <label>Value type
+            <InputText @bind-Value="form.ValueType" data-testid="value-type" />
+        </label>
+        <ValidationMessage For="@(() => form.ValueType)" />
+    </div>
+    <div>
+        <label>Default value
+            <InputText @bind-Value="form.DefaultValue" data-testid="default-value" />
+        </label>
+        <ValidationMessage For="@(() => form.DefaultValue)" />
+    </div>
+    <div>
+        <label>Reason
+            <InputText @bind-Value="form.Reason" data-testid="reason" />
+        </label>
+        <ValidationMessage For="@(() => form.Reason)" />
+    </div>
+
+    <button type="submit" data-testid="submit">Create</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p data-testid="status">@statusMessage</p>
+}
+
+@code {
+    private readonly CreateFlagFormModel form = new();
+    private string statusMessage = string.Empty;
+
+    private async Task SubmitAsync()
+    {
+        string[] productIds = form.ProductScope
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        AdminRbacMetadata metadata = new(
+            "tenant-default",
+            "blazor-user",
+            productIds.Length == 0 ? new[] { SharpNinjaProductCatalog.TruckMate } : productIds,
+            new[] { AdminRoleNames.Editor });
+
+        FeatureFlagDraftMutation mutation = new(
+            form.FlagKey,
+            form.EnvironmentName,
+            productIds.Length == 0 ? new[] { SharpNinjaProductCatalog.TruckMate } : productIds,
+            form.ValueType,
+            form.DefaultValue,
+            Array.Empty<string>(),
+            form.Reason,
+            metadata);
+
+        try
+        {
+            FeatureFlagDraft draft = await Runtime.CreateDraftAsync(mutation).ConfigureAwait(false);
+            statusMessage = $"Created '{draft.FlagKey}' in '{draft.EnvironmentName}' at revision {draft.Revision}.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            statusMessage = ex.Message;
+        }
+    }
+
+    /// <summary>Form model for the create draft page.</summary>
+    public sealed class CreateFlagFormModel
+    {
+        /// <summary>Flag key.</summary>
+        [Required]
+        public string FlagKey { get; set; } = string.Empty;
+
+        /// <summary>Environment name.</summary>
+        [Required]
+        public string EnvironmentName { get; set; } = string.Empty;
+
+        /// <summary>Comma separated product scope.</summary>
+        [Required]
+        public string ProductScope { get; set; } = SharpNinjaProductCatalog.TruckMate;
+
+        /// <summary>Value type.</summary>
+        [Required]
+        public string ValueType { get; set; } = "boolean";
+
+        /// <summary>Default value.</summary>
+        [Required]
+        public string DefaultValue { get; set; } = "false";
+
+        /// <summary>Reason for creating the draft.</summary>
+        [Required]
+        public string Reason { get; set; } = string.Empty;
+    }
+}

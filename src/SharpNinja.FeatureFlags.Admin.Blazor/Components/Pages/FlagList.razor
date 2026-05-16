@@ -1,0 +1,63 @@
+@page "/flags"
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Flags</PageTitle>
+
+<h1>Feature flag drafts</h1>
+
+<label>
+    Environment filter:
+    <select @bind="environmentFilter" data-testid="env-filter">
+        <option value="">All</option>
+        @foreach (string env in environments)
+        {
+            <option value="@env">@env</option>
+        }
+    </select>
+</label>
+
+<table class="flag-list">
+    <thead>
+        <tr>
+            <th>Flag key</th>
+            <th>Environment</th>
+            <th>Value type</th>
+            <th>Default</th>
+            <th>Revision</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (FeatureFlagDraft draft in FilteredDrafts())
+        {
+            <tr data-testid="draft-row">
+                <td>@draft.FlagKey</td>
+                <td>@draft.EnvironmentName</td>
+                <td>@draft.ValueType</td>
+                <td>@draft.DefaultValue</td>
+                <td>@draft.Revision</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private IReadOnlyList<FeatureFlagDraft> drafts = Array.Empty<FeatureFlagDraft>();
+    private string[] environments = Array.Empty<string>();
+    private string environmentFilter = string.Empty;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        drafts = Runtime.GetDrafts();
+        environments = drafts
+            .Select(d => d.EnvironmentName)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(e => e, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private IEnumerable<FeatureFlagDraft> FilteredDrafts() =>
+        string.IsNullOrEmpty(environmentFilter)
+            ? drafts
+            : drafts.Where(d => string.Equals(d.EnvironmentName, environmentFilter, StringComparison.Ordinal));
+}

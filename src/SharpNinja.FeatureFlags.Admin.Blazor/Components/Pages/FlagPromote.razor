@@ -1,0 +1,96 @@
+@page "/flags/promote"
+@using System.ComponentModel.DataAnnotations
+@using SharpNinja.FeatureFlags.Abstractions.Options
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Promote flag</PageTitle>
+
+<h1>Promote flag draft</h1>
+
+<EditForm Model="form" OnValidSubmit="SubmitAsync" FormName="promote-flag">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Flag key
+            <InputText @bind-Value="form.FlagKey" data-testid="flag-key" />
+        </label>
+        <ValidationMessage For="@(() => form.FlagKey)" />
+    </div>
+    <div>
+        <label>Source environment
+            <InputText @bind-Value="form.SourceEnvironmentName" data-testid="source-env" />
+        </label>
+        <ValidationMessage For="@(() => form.SourceEnvironmentName)" />
+    </div>
+    <div>
+        <label>Target environment
+            <InputText @bind-Value="form.TargetEnvironmentName" data-testid="target-env" />
+        </label>
+        <ValidationMessage For="@(() => form.TargetEnvironmentName)" />
+    </div>
+    <div>
+        <label>Reason
+            <InputText @bind-Value="form.Reason" data-testid="reason" />
+        </label>
+        <ValidationMessage For="@(() => form.Reason)" />
+    </div>
+
+    <button type="submit" data-testid="submit">Promote</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p data-testid="status">@statusMessage</p>
+}
+
+@code {
+    private readonly PromoteFormModel form = new();
+    private string statusMessage = string.Empty;
+
+    private async Task SubmitAsync()
+    {
+        AdminRbacMetadata metadata = new(
+            "tenant-default",
+            "blazor-user",
+            new[] { SharpNinjaProductCatalog.TruckMate },
+            new[] { AdminRoleNames.Promoter, AdminRoleNames.Publisher });
+
+        FeatureFlagPromotionAction action = new(
+            form.FlagKey,
+            form.SourceEnvironmentName,
+            form.TargetEnvironmentName,
+            form.Reason,
+            metadata);
+
+        try
+        {
+            FeatureFlagDraft draft = await Runtime.PromoteAsync(action).ConfigureAwait(false);
+            statusMessage = $"Promoted '{draft.FlagKey}' to '{draft.EnvironmentName}' at revision {draft.Revision}.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            statusMessage = ex.Message;
+        }
+    }
+
+    /// <summary>Form model for the promote page.</summary>
+    public sealed class PromoteFormModel
+    {
+        /// <summary>Flag key.</summary>
+        [Required]
+        public string FlagKey { get; set; } = string.Empty;
+
+        /// <summary>Source environment.</summary>
+        [Required]
+        public string SourceEnvironmentName { get; set; } = "dev";
+
+        /// <summary>Target environment.</summary>
+        [Required]
+        public string TargetEnvironmentName { get; set; } = "staging";
+
+        /// <summary>Reason for promotion.</summary>
+        [Required]
+        public string Reason { get; set; } = string.Empty;
+    }
+}

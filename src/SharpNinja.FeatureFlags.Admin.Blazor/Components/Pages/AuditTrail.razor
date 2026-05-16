@@ -1,0 +1,51 @@
+@page "/audit"
+@inject AdminRuntimeAccessor Runtime
+
+<PageTitle>Audit trail</PageTitle>
+
+<h1>Audit trail</h1>
+
+@if (entries.Count == 0)
+{
+    <p data-testid="empty">No admin audit entries recorded.</p>
+}
+else
+{
+    <table class="audit-table">
+        <thead>
+            <tr>
+                <th>Seq</th>
+                <th>Action</th>
+                <th>Flag</th>
+                <th>Environment</th>
+                <th>Target</th>
+                <th>Actor</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (AdminAuditEntry entry in entries)
+            {
+                <tr data-testid="audit-row">
+                    <td>@entry.Sequence</td>
+                    <td>@entry.Action</td>
+                    <td>@entry.FlagKey</td>
+                    <td>@entry.EnvironmentName</td>
+                    <td>@(entry.TargetEnvironmentName ?? string.Empty)</td>
+                    <td>@entry.RbacMetadata.PrincipalId</td>
+                    <td>@entry.Reason</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<AdminAuditEntry> entries = Array.Empty<AdminAuditEntry>();
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        entries = Runtime.GetAuditTrail();
+    }
+}

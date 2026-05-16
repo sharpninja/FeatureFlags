@@ -18,5 +18,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Cqrs\SharpNinja.FeatureFlags.Cqrs.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Abstractions\SharpNinja.FeatureFlags.Abstractions.csproj" />
   </ItemGroup>
 </Project>
