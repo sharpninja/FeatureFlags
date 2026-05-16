@@ -1348,13 +1348,13 @@ internal static class RuleValueConversions
 
 /// <summary>TR-3 deterministic percentage bucketing hash.</summary>
 /// <remarks>
-/// TR-3 recommends SipHash-2-4. This implementation uses FNV-1a 64-bit instead.
-/// Decision: FNV-1a satisfies all hard TR-3 constraints (deterministic, platform-independent,
-/// fixed output for a given input) without requiring a seed key. SipHash-2-4 was designed to
-/// resist hash-flooding DoS attacks from adversarial external input; bucketing inputs
-/// (ProductId, ReleaseId, FlagKey, discriminator value) are all controlled internal values,
-/// so hash-flooding is not a threat model concern for v1. FNV-1a is implementable in pure
-/// managed code with no NuGet dependency and no key-management configuration surface.
+/// TR-3 specifies FNV-1a 64-bit with offset basis 14695981039346656037 and prime 1099511628211
+/// over the concatenation `ProductId || ReleaseId || FlagKey || discriminator`. Both constants
+/// are pinned by a determinism test in `FeatureFlagEvaluatorTests` to prevent silent drift.
+/// FNV-1a satisfies all hard TR-3 constraints (deterministic, platform-independent, fixed
+/// output for a given input) without requiring a seed key. The earlier SipHash-2-4 recommendation
+/// was reconsidered in ADR-001: bucketing inputs (ProductId, ReleaseId, FlagKey, discriminator)
+/// are all controlled internal values, so hash-flooding is not a threat model concern for v1.
 /// See docs/adr/ADR-001-fnv1a-bucketing-hash.md for the full decision record.
 /// </remarks>
 internal static class DeterministicBucket

@@ -1,6 +1,6 @@
 # ADR-001: Use FNV-1a instead of SipHash-2-4 for percentage bucketing
 
-**Status:** Accepted
+**Status:** Accepted; TR-3 amended 2026-05-16 to specify FNV-1a normatively.
 **Date:** 2026-05-15
 **Requirement:** TR-3
 
