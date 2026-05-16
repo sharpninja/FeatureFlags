@@ -1,5 +1,31 @@
 # Agent Instructions
 
+## System Documentation
+
+Before starting any implementation task, read the agent-facing documentation in `docs/agent/`:
+
+| Document | When to read |
+|---|---|
+| [Architecture](docs/agent/Architecture.md) | Before any task - all components, data flow, identity model |
+| [Admin Service](docs/agent/Admin-Service.md) | Flag authoring, drafts, RBAC, audit trail |
+| [Distribution Service](docs/agent/Distribution-Service.md) | HTTP API, auth, endpoints, ETag protocol |
+| [SDK Reference](docs/agent/SDK-Reference.md) | Evaluation, context, registration, startup |
+| [Manifest Schema](docs/agent/Manifest-Schema.md) | JSON schema, signing, validation codes |
+| [CEL Reference](docs/agent/CEL-Reference.md) | Rule expression language, operators, macros, custom functions |
+| [Workflows](docs/agent/Workflows.md) | Step-by-step sequences for create/publish/promote/evaluate |
+
+### Critical constraints (read before acting)
+
+- **ProductId catalog**: valid v1 values are `truckmate` and `drivermate` only.
+- **Published environment values**: exactly `development`, `staging`, `production`.
+- **Evaluation is synchronous and offline-first**: `Evaluate<T>()` never touches the network.
+- **Ed25519 signatures required for production**: `flagctl validate` enforces this.
+- **No em-dashes** (`—`, U+2014) anywhere - code, docs, commits, or comments.
+- **Tests first**: Byrd Development Process requires tests before implementation.
+- **Constructor-injected DI with `ILogger<T>`**: enforced by `ArchitectureTests`.
+
+---
+
 ## Session Start
 
 1. Read `AGENTS-README-FIRST.yaml` in the repository root for the current MCP marker, endpoints, plugin contract, and authentication details.
