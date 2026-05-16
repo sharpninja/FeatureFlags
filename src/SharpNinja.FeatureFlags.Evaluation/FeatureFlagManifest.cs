@@ -5,6 +5,10 @@ using System.Text.Json;
 namespace SharpNinja.FeatureFlags.Evaluation;
 
 /// <summary>TR-11 runtime manifest parsed from the version 1 feature flag manifest schema.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="ProductId">Root product identifier.</param>
 /// <param name="ReleaseId">Manifest release identifier.</param>
 /// <param name="Environment">Manifest environment.</param>
@@ -102,6 +106,10 @@ public sealed record FeatureFlagManifest(
 }
 
 /// <summary>TR-11 runtime feature flag definition from a parsed manifest.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="Key">Feature flag key.</param>
 /// <param name="Type">Feature flag value type.</param>
 /// <param name="DefaultValue">Default manifest value.</param>
@@ -117,6 +125,10 @@ public sealed record FeatureFlagDefinition(
     IReadOnlyList<FeatureFlagRule> Rules);
 
 /// <summary>TR-11 runtime feature flag rule from a parsed manifest.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="When">Rule predicate text.</param>
 /// <param name="Value">Rule result value.</param>
 public sealed record FeatureFlagRule(string When, object? Value)

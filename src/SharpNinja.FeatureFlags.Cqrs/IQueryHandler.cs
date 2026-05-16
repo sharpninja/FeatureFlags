@@ -1,7 +1,7 @@
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-001: Handler for a CQRS query. Receives the query and a <see cref="CallContext"/>
+/// out-of-v1: handler for a CQRS query. Receives the query and a <see cref="CallContext"/>
 /// and returns a <see cref="Result{TResult}"/>. All handler methods are async.
 /// </summary>
 /// <typeparam name="TQuery">The query type.</typeparam>

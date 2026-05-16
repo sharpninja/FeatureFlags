@@ -1,6 +1,6 @@
 namespace SharpNinja.FeatureFlags.Experimentation;
 
-/// <summary>Statistical analysis result comparing variants against a control.</summary>
+/// <summary>out-of-v1: statistical analysis result comparing variants against a control.</summary>
 /// <param name="ExperimentId">Experiment identifier.</param>
 /// <param name="ControlVariantKey">The control variant key used as baseline.</param>
 /// <param name="VariantResults">Per-variant statistical results.</param>
@@ -9,7 +9,7 @@ public sealed record ExperimentAnalysisResult(
     string ControlVariantKey,
     IReadOnlyList<VariantAnalysisResult> VariantResults);
 
-/// <summary>Statistical result for one variant vs. control.</summary>
+/// <summary>out-of-v1: statistical result for one variant vs. control.</summary>
 /// <param name="VariantKey">The variant key.</param>
 /// <param name="ConversionRate">Conversion rate for this variant (conversions / impressions).</param>
 /// <param name="RelativeLift">Relative lift vs. control: (variantRate - controlRate) / controlRate.</param>

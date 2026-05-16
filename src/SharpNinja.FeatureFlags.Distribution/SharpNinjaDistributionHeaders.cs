@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Distribution;
 
 /// <summary>TR-9 v1 well-known HTTP headers for Distribution service clients.</summary>
+/// <remarks>
+/// Static constants. Header names are part of the public wire contract; do not rename.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 public static class SharpNinjaDistributionHeaders
 {
     /// <summary>TR-9 v1 header name used for product-scoped Distribution API keys.</summary>

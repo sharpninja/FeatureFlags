@@ -4,6 +4,15 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace SharpNinja.FeatureFlags.Distribution;
 
 /// <summary>FR-3 FR-6 FR-8 TR-9 TR-10 TR-11 v1 DI registration for the Distribution service runtime.</summary>
+/// <remarks>
+/// Registration is idempotent for the Distribution services it owns; consumer registrations are preserved.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-3"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-6"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public static class SharpNinjaDistributionServiceCollectionExtensions
 {
     /// <summary>Registers in-memory Distribution runtime services for manifest and exposure endpoints.</summary>

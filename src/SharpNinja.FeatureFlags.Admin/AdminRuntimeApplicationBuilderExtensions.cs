@@ -4,6 +4,15 @@ using System.Text;
 namespace SharpNinja.FeatureFlags.Admin;
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-10 TR-11: Lightweight Admin runtime request handler registration.</summary>
+/// <remarks>
+/// Registration is idempotent for the admin-runtime middleware it owns; call once per pipeline.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public static class AdminRuntimeApplicationBuilderExtensions
 {
     /// <summary>Registers lightweight Admin runtime request handlers for operator smoke tests and metrics scraping.</summary>
@@ -31,6 +40,15 @@ public static class AdminRuntimeApplicationBuilderExtensions
         if (path == "/")
         {
             return WriteTextAsync(context, "SharpNinja Feature Flags Admin");
+        }
+
+        bool isAdminPath = path == "/admin/runtime"
+            || path == "/admin/audit"
+            || path == "/admin/metrics";
+        if (isAdminPath && (context.User.Identity is null || !context.User.Identity.IsAuthenticated))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
         }
 
         if (path == "/admin/runtime")

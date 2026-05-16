@@ -9,6 +9,16 @@ using SharpNinja.FeatureFlags.Evaluation;
 namespace SharpNinja.FeatureFlags;
 
 /// <summary>FR-1 FR-4 FR-8 TR-5 TR-7 TR-11 Phase 1 service registration extensions for SharpNinja Feature Flags.</summary>
+/// <remarks>
+/// Registration is idempotent for the SharpNinja services it owns; call once per host. Composes with the
+/// standard Microsoft.Extensions.DependencyInjection scope rules and does not override prior registrations of consumer types.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-1"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-4"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-5"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-7"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public static class SharpNinjaFeatureFlagServiceCollectionExtensions
 {
     /// <summary>Registers SharpNinja Feature Flags services from a manifest JSON payload.</summary>

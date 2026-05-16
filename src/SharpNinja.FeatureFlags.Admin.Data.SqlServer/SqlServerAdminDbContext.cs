@@ -4,6 +4,12 @@ using Microsoft.EntityFrameworkCore.Design;
 namespace SharpNinja.FeatureFlags.Admin.Data.SqlServer;
 
 /// <summary>FR-9 FR-11 TR-9: SQL Server-specific <see cref="AdminDbContext"/> that configures the SQL Server provider.</summary>
+/// <remarks>
+/// SQL Server-flavored EF Core context; inherits the multi-tenant invariants of <see cref="AdminDbContext"/>.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 public sealed class SqlServerAdminDbContext : AdminDbContext
 {
     /// <summary>Initializes a new instance of <see cref="SqlServerAdminDbContext"/> with caller-supplied options.</summary>

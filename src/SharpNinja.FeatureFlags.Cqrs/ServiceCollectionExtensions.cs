@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-001: DI registration extensions for the CQRS framework.
+/// out-of-v1: DI registration extensions for the CQRS framework.
 /// Registers the <see cref="Dispatcher"/>, scans assemblies for handlers, and registers pipeline behaviors.
 /// </summary>
 public static class ServiceCollectionExtensions

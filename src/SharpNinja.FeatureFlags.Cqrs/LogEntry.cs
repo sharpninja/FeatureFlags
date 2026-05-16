@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-003: A captured log entry from a <see cref="CallContext"/>.
+/// out-of-v1: a captured log entry from a <see cref="CallContext"/>.
 /// Stores the timestamp, level, message, and optional exception for each log call
 /// made through the context's <see cref="ILogger"/> implementation.
 /// </summary>

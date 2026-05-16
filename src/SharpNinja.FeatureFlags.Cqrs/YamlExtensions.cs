@@ -4,7 +4,7 @@ using System.Globalization;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-007: Extension method for serialization of CQRS request and result objects.
+/// out-of-v1: extension method for serialization of CQRS request and result objects.
 /// Uses AOT-safe formatting for primitive values and falls back to <see cref="object.ToString"/>.
 /// </summary>
 public static class YamlExtensions

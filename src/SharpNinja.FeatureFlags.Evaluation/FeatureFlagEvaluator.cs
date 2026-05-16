@@ -4,6 +4,11 @@ using SharpNinja.FeatureFlags.Abstractions;
 namespace SharpNinja.FeatureFlags.Evaluation;
 
 /// <summary>TR-11 evaluates version 1 manifest-backed feature flags without global OpenFeature state.</summary>
+/// <remarks>
+/// Stateless evaluator. Rule evaluation is ordered by manifest declaration; the first matching rule wins.
+/// Returns <see cref="EvaluationReason.Default"/> when no rule matches; never throws on missing or malformed rules.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed class FeatureFlagEvaluator
 {
     private static readonly Action<ILogger, string, Exception?> FlagNotFound =

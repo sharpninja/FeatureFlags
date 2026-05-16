@@ -8,6 +8,10 @@ namespace SharpNinja.FeatureFlags.MediatR;
 /// If the flag evaluation does not match the required value, the pipeline is halted
 /// by throwing <see cref="FeatureFlagDisabledException"/>.
 /// </summary>
+/// <remarks>
+/// Stateless pipeline behavior; resolved per request. Short-circuits the pipeline by throwing
+/// <see cref="FeatureFlagDisabledException"/> when the gated flag evaluates to false.
+/// </remarks>
 /// <typeparam name="TRequest">The MediatR request type.</typeparam>
 /// <typeparam name="TResponse">The MediatR response type.</typeparam>
 public sealed class FlagGateBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>

@@ -3,7 +3,7 @@ using SharpNinja.FeatureFlags.Abstractions;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// A typed pipeline behavior marker interface for flag-aware behaviors.
+/// out-of-v1: a typed pipeline behavior marker interface for flag-aware behaviors.
 /// Strongly-typed behaviors implement this interface to participate in the CQRS pipeline
 /// alongside the non-generic <see cref="IPipelineBehavior"/>.
 /// </summary>
@@ -23,11 +23,16 @@ public interface IPipelineBehavior<TRequest, TResult>
 }
 
 /// <summary>
-/// A typed pipeline behavior that evaluates a feature flag before dispatch and throws
+/// FR-7: a typed pipeline behavior that evaluates a feature flag before dispatch and throws
 /// <see cref="FeatureFlagDisabledException"/> if the flag is disabled (evaluates to <c>false</c>).
 /// When the flag is enabled, the request is passed through to the next step unchanged.
 /// Register this as an <see cref="IPipelineBehavior"/> to guard an entire command or query path.
 /// </summary>
+/// <remarks>
+/// Stateless pipeline behavior; resolved per request. Short-circuits the pipeline by throwing
+/// <see cref="FeatureFlagDisabledException"/> when the kill-switch flag evaluates to true.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-7"/>
+/// </remarks>
 /// <typeparam name="TRequest">The command or query type. Used to constrain typed dispatch.</typeparam>
 /// <typeparam name="TResult">The result value type.</typeparam>
 public sealed class KillSwitchBehavior<TRequest, TResult> : IPipelineBehavior

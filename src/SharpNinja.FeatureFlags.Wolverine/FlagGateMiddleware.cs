@@ -8,6 +8,10 @@ namespace SharpNinja.FeatureFlags.Wolverine;
 /// If the configured flag does not evaluate to the required value, <see cref="Before(IMessageContext)"/>
 /// throws <see cref="FeatureFlagDisabledException"/> to halt processing of the message.
 /// </summary>
+/// <remarks>
+/// Stateless Wolverine middleware. Short-circuits the message by throwing
+/// <see cref="FeatureFlagDisabledException"/> when the gated flag evaluates to false.
+/// </remarks>
 public sealed class FlagGateMiddleware
 {
     private readonly ISharpNinjaFeatureClient _client;

@@ -1,6 +1,12 @@
 namespace SharpNinja.FeatureFlags.Abstractions;
 
 /// <summary>FR-8 TR-5 TR-7 v1 contract: immutable exposure event emitted by SDK evaluations.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-5"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-7"/>
+/// </remarks>
 /// <param name="FlagKey">Evaluated feature flag key.</param>
 /// <param name="ResolvedValue">Resolved feature flag value.</param>
 /// <param name="Reason">Evaluation reason.</param>

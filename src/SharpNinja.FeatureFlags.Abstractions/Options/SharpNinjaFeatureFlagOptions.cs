@@ -1,6 +1,14 @@
 namespace SharpNinja.FeatureFlags.Abstractions.Options;
 
 /// <summary>FR-1 FR-8 FR-11 TR-9 TR-11 v1 contract: host-configured feature flag SDK options.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-1"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="ProductId">Compile-time product identifier.</param>
 /// <param name="ReleaseId">Compile-time release identifier.</param>
 /// <param name="Environment">Target environment.</param>

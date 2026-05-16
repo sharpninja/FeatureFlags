@@ -1,7 +1,7 @@
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// Selects the appropriate command handler for a request, enabling flag-aware variant routing.
+/// out-of-v1: selects the appropriate command handler for a request, enabling flag-aware variant routing.
 /// Implementations may resolve from DI, evaluate feature flags, or apply any other
 /// selection strategy before returning a handler instance (or null if none is applicable).
 /// </summary>
@@ -21,7 +21,7 @@ public interface IHandlerSelector<TRequest, TResult>
 }
 
 /// <summary>
-/// Selects the appropriate query handler for a request, enabling flag-aware variant routing
+/// out-of-v1: selects the appropriate query handler for a request, enabling flag-aware variant routing
 /// over the query dispatch path.
 /// </summary>
 /// <typeparam name="TRequest">The query type. Must implement <see cref="IQuery{TResult}"/>.</typeparam>

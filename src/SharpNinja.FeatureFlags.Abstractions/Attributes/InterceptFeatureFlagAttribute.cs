@@ -19,6 +19,8 @@ namespace SharpNinja.FeatureFlags.Abstractions.Attributes;
 /// <c>&lt;InterceptorsPreviewNamespaces&gt;</c>). The SharpNinja generator emits interceptors
 /// under the <c>SharpNinja.FeatureFlags.Generated</c> namespace.
 /// </para>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-7"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-12"/>
 /// </remarks>
 /// <param name="flagKey">
 /// The feature flag key gating call sites of the decorated method. Must be a non-empty,

@@ -5,7 +5,7 @@ using System.Text;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-001: Result monad for CQRS handler return values.
+/// out-of-v1: result monad for CQRS handler return values.
 /// All handlers return <see cref="Result{T}"/> to represent success or failure
 /// without throwing exceptions for expected error conditions.
 /// </summary>
@@ -93,7 +93,7 @@ public readonly struct Result<T>
 }
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-001: Non-generic Result for void-like commands that don't return a value.
+/// out-of-v1: non-generic Result for void-like commands that don't return a value.
 /// </summary>
 public readonly struct Result
 {

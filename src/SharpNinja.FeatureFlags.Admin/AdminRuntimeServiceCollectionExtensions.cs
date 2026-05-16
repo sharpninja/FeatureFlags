@@ -8,6 +8,15 @@ using Microsoft.Extensions.Options;
 namespace SharpNinja.FeatureFlags.Admin;
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-10 TR-11: DI registration extensions for the Admin runtime.</summary>
+/// <remarks>
+/// Registration is idempotent for the admin-runtime services it owns; consumer registrations are preserved.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public static class AdminRuntimeServiceCollectionExtensions
 {
     /// <summary>Registers the Admin runtime foundation, auth hooks, RBAC, store abstraction, and immutable audit service.</summary>
@@ -36,8 +45,8 @@ public static class AdminRuntimeServiceCollectionExtensions
         AuthenticationBuilder authenticationBuilder = services.AddAuthentication(authenticationOptions =>
         {
             authenticationOptions.DefaultAuthenticateScheme = options.Authentication.AuthenticationScheme;
-            authenticationOptions.DefaultChallengeScheme = options.Authentication.AuthenticationScheme;
-            authenticationOptions.DefaultForbidScheme = options.Authentication.AuthenticationScheme;
+            authenticationOptions.DefaultChallengeScheme = options.Authentication.ChallengeScheme ?? options.Authentication.AuthenticationScheme;
+            authenticationOptions.DefaultForbidScheme = options.Authentication.ForbidScheme ?? options.Authentication.AuthenticationScheme;
         });
 
         if (options.Authentication.Mode == AdminAuthenticationMode.Test)

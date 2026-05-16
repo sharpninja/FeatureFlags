@@ -8,6 +8,10 @@ namespace SharpNinja.FeatureFlags.Wolverine;
 /// evaluates to <c>true</c> (kill-switch active), <see cref="Before(IMessageContext)"/>
 /// throws <see cref="FeatureFlagDisabledException"/> to prevent the handler from running.
 /// </summary>
+/// <remarks>
+/// Stateless Wolverine middleware. Short-circuits the message by throwing
+/// <see cref="FeatureFlagDisabledException"/> when the kill-switch flag evaluates to true.
+/// </remarks>
 public sealed class KillSwitchMiddleware
 {
     private readonly ISharpNinjaFeatureClient _client;

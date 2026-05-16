@@ -1,6 +1,11 @@
 namespace SharpNinja.FeatureFlags.Abstractions.Attributes;
 
 /// <summary>FR-7 FR-12 Phase 0 contract: declares a generated gate around a feature method.</summary>
+/// <remarks>
+/// Source generator marker; the generator emits the partial-method body that gates execution behind the named flag.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-7"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-12"/>
+/// </remarks>
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
 public sealed class FeatureFlagGateAttribute : Attribute
 {

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 
 namespace SharpNinja.FeatureFlags.Admin;
 
-/// <summary>FR-9 TR-10 registers and applies forwarded-headers middleware for ngrok and reverse-proxy hosting.</summary>
+/// <summary>out-of-v1: registers and applies forwarded-headers middleware for ngrok and reverse-proxy hosting.</summary>
 public static class NgrokTunnelingExtensions
 {
     /// <summary>

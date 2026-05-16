@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Abstractions.Options;
 
 /// <summary>FR-8 v1 contract: user-definable exposure event retention policy.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// </remarks>
 /// <param name="RetentionPeriod">Exposure event retention period, or <see langword="null" /> for indefinite retention.</param>
 public sealed record SharpNinjaExposureRetentionOptions(TimeSpan? RetentionPeriod)
 {

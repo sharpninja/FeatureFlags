@@ -8,6 +8,10 @@ namespace SharpNinja.FeatureFlags.MediatR;
 /// flag evaluates to <c>true</c> (the kill-switch is active), the pipeline is halted
 /// by throwing <see cref="FeatureFlagDisabledException"/> before the handler runs.
 /// </summary>
+/// <remarks>
+/// Stateless pipeline behavior; resolved per request. Short-circuits the pipeline by throwing
+/// <see cref="FeatureFlagDisabledException"/> when the kill-switch flag evaluates to true.
+/// </remarks>
 /// <typeparam name="TRequest">The MediatR request type.</typeparam>
 /// <typeparam name="TResponse">The MediatR response type.</typeparam>
 public sealed class KillSwitchBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>

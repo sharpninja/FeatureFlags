@@ -4,6 +4,11 @@ namespace SharpNinja.FeatureFlags.Abstractions;
 /// FR-7 FR-12: thrown by generated feature-flag gate accessors when the flag is disabled
 /// and the gate declares <see cref="Attributes.DisabledBehavior.Throw"/>.
 /// </summary>
+/// <remarks>
+/// Stateless after construction; safe to rethrow across threads. Never caught and swallowed inside the SDK.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-7"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-12"/>
+/// </remarks>
 public sealed class FeatureFlagDisabledException : InvalidOperationException
 {
     /// <summary>Initializes a new instance of <see cref="FeatureFlagDisabledException"/>.</summary>

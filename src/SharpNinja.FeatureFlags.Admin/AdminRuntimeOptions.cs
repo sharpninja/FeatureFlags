@@ -1,6 +1,15 @@
 namespace SharpNinja.FeatureFlags.Admin;
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-10 TR-11: host-configured Admin runtime options.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed record AdminRuntimeOptions
 {
     /// <summary>TR-9: authentication and claims configuration for Admin endpoints.</summary>
@@ -20,6 +29,12 @@ public sealed record AdminRuntimeOptions
 }
 
 /// <summary>FR-9 TR-10 TR-11: user-defined retention windows for Admin evidence data.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed record AdminRetentionOptions
 {
     /// <summary>FR-9: retention period for publish evidence packages; null keeps evidence indefinitely.</summary>

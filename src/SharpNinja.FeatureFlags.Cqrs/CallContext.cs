@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-003: Per-dispatch call context carrying correlation ID, auth claims,
+/// out-of-v1: per-dispatch call context carrying correlation ID, auth claims,
 /// timing, and an <see cref="ILogger"/> that captures log entries to an internal list.
 /// Created by the <see cref="Dispatcher"/> for each <c>SendAsync</c> / <c>QueryAsync</c> call.
 /// </summary>

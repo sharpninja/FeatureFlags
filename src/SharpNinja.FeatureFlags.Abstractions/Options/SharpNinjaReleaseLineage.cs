@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Abstractions.Options;
 
 /// <summary>FR-1 v1 contract: immutable release lineage for semver plus channel and build.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-1"/>
+/// </remarks>
 /// <param name="ReleaseId">Immutable release identifier stamped into the build.</param>
 /// <param name="SemanticVersion">Strict semantic version for the product release.</param>
 /// <param name="Channel">Release channel for staged rollout targeting.</param>

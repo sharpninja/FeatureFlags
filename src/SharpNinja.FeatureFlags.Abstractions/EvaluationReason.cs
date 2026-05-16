@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Abstractions;
 
 /// <summary>TR-11 Phase 0 contract: describes why a feature flag evaluation resolved to its value.</summary>
+/// <remarks>
+/// Members carry stable ordinal values that consumers may persist; treat the enumeration as part of the public contract.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public enum EvaluationReason
 {
     /// <summary>The evaluator did not provide a specific reason.</summary>

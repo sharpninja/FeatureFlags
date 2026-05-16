@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Abstractions.Options;
 
 /// <summary>FR-11 v1 contract: deployment environment supporting built-in and custom environment names.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// </remarks>
 /// <param name="Name">Environment name used for manifest selection and promotion workflows.</param>
 public sealed record SharpNinjaDeploymentEnvironment(string Name)
 {

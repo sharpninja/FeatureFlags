@@ -34,6 +34,34 @@
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Cli\SharpNinja.FeatureFlags.Cli.csproj" />
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Build\SharpNinja.FeatureFlags.Build.csproj" />
     <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Cqrs\SharpNinja.FeatureFlags.Cqrs.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.MediatR\SharpNinja.FeatureFlags.MediatR.csproj" />
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Experimentation\SharpNinja.FeatureFlags.Experimentation.csproj" />
   </ItemGroup>
+
+  <!--
+    Wolverine pulls Microsoft.CodeAnalysis 4.x which conflicts with this test project's transitive 5.x
+    graph. Reference it as ReferenceOutputAssembly="false" so its binary and XML doc file are produced
+    and copied into the output directory for runtime reflection, but its compile-time references are
+    not added. IdentityServer projects are owned by a concurrent workstream and are deliberately not
+    referenced here; their public types are not yet stable in this branch and they would couple this
+    test project to compile-time-broken state.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SharpNinja.FeatureFlags.Wolverine\SharpNinja.FeatureFlags.Wolverine.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="ReflectionOnlyAssembly"
+                      Private="false" />
+  </ItemGroup>
+
+  <Target Name="CopyReflectionOnlyAssemblies" AfterTargets="Build">
+    <ItemGroup>
+      <_ReflectionOnlyBinaries Include="@(ReflectionOnlyAssembly -> '%(RootDir)%(Directory)%(Filename).dll')" />
+      <_ReflectionOnlyBinaries Include="@(ReflectionOnlyAssembly -> '%(RootDir)%(Directory)%(Filename).xml')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ReflectionOnlyBinaries)"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('%(_ReflectionOnlyBinaries.FullPath)')" />
+  </Target>
 </Project>
 

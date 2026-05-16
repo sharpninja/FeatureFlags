@@ -5,17 +5,29 @@ using SharpNinja.FeatureFlags.Evaluation;
 namespace SharpNinja.FeatureFlags.Manifest;
 
 /// <summary>FR-12 Phase 1 contract: result returned by manifest schema validation.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-12"/>
+/// </remarks>
 /// <param name="IsValid">Indicates whether the manifest passed validation.</param>
 /// <param name="Errors">Validation errors in deterministic order.</param>
 public sealed record ManifestValidationResult(bool IsValid, IReadOnlyList<ManifestValidationError> Errors);
 
 /// <summary>FR-12 Phase 1 contract: describes one manifest schema validation failure.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-12"/>
+/// </remarks>
 /// <param name="Code">Stable machine-readable error code.</param>
 /// <param name="Message">Human-readable validation failure message.</param>
 /// <param name="Path">Optional JSON path for the validation failure.</param>
 public sealed record ManifestValidationError(string Code, string Message, string? Path = null);
 
 /// <summary>FR-12 Phase 1 contract: validates feature flag manifest JSON for CI and CLI use.</summary>
+/// <remarks>
+/// Stateless. Collects all detected violations into the returned result rather than throwing on the first failure.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-12"/>
+/// </remarks>
 public static class ManifestValidator
 {
     private const string InvalidJsonCode = "FFMANIFEST_JSON_INVALID";

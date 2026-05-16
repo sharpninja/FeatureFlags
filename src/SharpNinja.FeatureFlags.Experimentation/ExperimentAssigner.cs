@@ -4,7 +4,7 @@ using SharpNinja.FeatureFlags.Abstractions;
 namespace SharpNinja.FeatureFlags.Experimentation;
 
 /// <summary>
-/// Assigns subjects to experiment variants using FNV-1a 64-bit deterministic bucketing.
+/// out-of-v1: assigns subjects to experiment variants using FNV-1a 64-bit deterministic bucketing.
 /// Evaluates the experiment's feature flag gate before assigning variants.
 /// </summary>
 public sealed class ExperimentAssigner : IExperimentAssigner

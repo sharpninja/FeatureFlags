@@ -3,6 +3,11 @@ using System.Security.Claims;
 namespace SharpNinja.FeatureFlags.Admin;
 
 /// <summary>TR-9 TR-11: Admin authentication mode selected by the host composition root.</summary>
+/// <remarks>
+/// Members carry stable ordinal values that consumers may persist; treat the enumeration as part of the public contract.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public enum AdminAuthenticationMode
 {
     /// <summary>TR-9: deterministic header-backed authentication for repeatable tests.</summary>
@@ -13,6 +18,11 @@ public enum AdminAuthenticationMode
 }
 
 /// <summary>TR-9 TR-11: configurable Admin authentication and claim-mapping options.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed record AdminAuthenticationOptions
 {
     /// <summary>TR-9: authentication mode used by the Admin host.</summary>
@@ -20,6 +30,12 @@ public sealed record AdminAuthenticationOptions
 
     /// <summary>TR-9: active authentication scheme for Admin endpoints.</summary>
     public string AuthenticationScheme { get; set; } = SharpNinjaAdminDefaults.TestAuthenticationScheme;
+
+    /// <summary>TR-9: challenge scheme used when an unauthenticated user accesses a protected endpoint. Defaults to <see cref="AuthenticationScheme"/>.</summary>
+    public string? ChallengeScheme { get; set; }
+
+    /// <summary>TR-9: forbid scheme used when authenticated users are denied. Defaults to <see cref="AuthenticationScheme"/>.</summary>
+    public string? ForbidScheme { get; set; }
 
     /// <summary>TR-9: claim mapping used by the Admin actor resolver.</summary>
     public AdminClaimsMappingOptions Claims { get; } = new();
@@ -45,6 +61,11 @@ public sealed record AdminAuthenticationOptions
 }
 
 /// <summary>TR-9 TR-11: claim names used to resolve Admin actors from test auth or OIDC principals.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed record AdminClaimsMappingOptions
 {
     /// <summary>TR-9: claim type used as the stable Admin principal id.</summary>
@@ -77,6 +98,11 @@ public sealed record AdminClaimsMappingOptions
 }
 
 /// <summary>TR-9 TR-11: production OIDC settings captured without forcing package wiring in this worker slice.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed record AdminOidcOptions
 {
     /// <summary>TR-9: OIDC authority URL.</summary>

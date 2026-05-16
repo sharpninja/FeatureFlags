@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Abstractions.Attributes;
 
 /// <summary>FR-12 Phase 0 contract: declares a variant key supported by a flag member.</summary>
+/// <remarks>
+/// Source generator marker; declares the variant identifier the generator binds to the decorated method.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-12"/>
+/// </remarks>
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method, AllowMultiple = true, Inherited = true)]
 public sealed class FeatureFlagVariantAttribute : Attribute
 {

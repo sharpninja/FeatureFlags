@@ -4,11 +4,15 @@ using SharpNinja.FeatureFlags.Abstractions;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// A pipeline behavior that evaluates a feature flag after the handler runs successfully
+/// FR-8: a pipeline behavior that evaluates a feature flag after the handler runs successfully
 /// and logs a structured exposure event recording the flag key, request type, and evaluation reason.
 /// This supports experimentation pipelines that need to track which flag variant was active
 /// when a given command or query was processed.
 /// </summary>
+/// <remarks>
+/// Stateless pipeline behavior; resolved per request. Emits exposure events after the inner handler returns.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// </remarks>
 /// <typeparam name="TRequest">The command or query type. Used for the log message.</typeparam>
 /// <typeparam name="TResult">The result value type.</typeparam>
 public sealed class ExposureLoggingBehavior<TRequest, TResult> : IPipelineBehavior

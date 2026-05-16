@@ -1,7 +1,7 @@
 namespace SharpNinja.FeatureFlags.Cqrs.Search;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11: Parses boolean text filters with <c>&amp;&amp;</c>, <c>||</c>, <c>!</c>, parentheses, and quoted terms.
+/// out-of-v1: parses boolean text filters with <c>&amp;&amp;</c>, <c>||</c>, <c>!</c>, parentheses, and quoted terms.
 /// When no explicit operators are present, space-separated terms are treated as an AND chain.
 /// </summary>
 public static class BooleanSearchParser

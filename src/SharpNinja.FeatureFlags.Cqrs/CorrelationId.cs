@@ -3,7 +3,7 @@ using System.Globalization;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-002: Decimal correlation ID with format <c>{baseId}.{counter}</c>.
+/// out-of-v1: decimal correlation ID with format <c>{baseId}.{counter}</c>.
 /// The <see cref="BaseId"/> is a random 8-digit long that remains stable for the entire call tree.
 /// The counter is a thread-safe incrementing integer that advances with each pipeline step or handler call,
 /// giving every step in the distributed call tree a unique identifier.

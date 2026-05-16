@@ -5,6 +5,15 @@ using SharpNinja.FeatureFlags.Admin.Data.Entities;
 namespace SharpNinja.FeatureFlags.Admin.Data;
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-10: EF Core implementation of <see cref="IAdminRuntimeStore"/> backed by any relational provider.</summary>
+/// <remarks>
+/// Scoped DI lifetime tied to <c>AdminDbContext</c>. Not thread-safe across concurrent requests;
+/// each operation enrolls in the ambient EF Core transaction when present.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// </remarks>
 public sealed class EfCoreAdminRuntimeStore : IAdminRuntimeStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -74,6 +83,7 @@ public sealed class EfCoreAdminRuntimeStore : IAdminRuntimeStore
     public async ValueTask<AdminAuditEntry> AppendAuditEntryAsync(AdminAuditEntry entry, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(entry);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entry.Reason, nameof(entry));
 
         AuditEntryEntity entity = ToAuditEntity(entry);
         context.AuditEntries.Add(entity);

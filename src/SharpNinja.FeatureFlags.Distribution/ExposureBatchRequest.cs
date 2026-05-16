@@ -4,6 +4,12 @@ using System.Text.Json;
 namespace SharpNinja.FeatureFlags.Distribution;
 
 /// <summary>FR-8 TR-7 TR-9 v1 exposure upload batch accepted by the Distribution service.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-7"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 /// <param name="ProductId">Product identifier that emitted the exposure events.</param>
 /// <param name="ReleaseId">Release identifier that emitted the exposure events.</param>
 /// <param name="Environment">Deployment environment that emitted the exposure events.</param>
@@ -119,6 +125,10 @@ public sealed record ExposureBatchRequest(
 }
 
 /// <summary>FR-8 v1 single exposure event submitted by an SDK upload worker.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// </remarks>
 /// <param name="FlagKey">Evaluated flag key.</param>
 /// <param name="ResolvedValue">Resolved flag value.</param>
 /// <param name="MatchedRuleIndex">Optional zero-based rule index that matched.</param>

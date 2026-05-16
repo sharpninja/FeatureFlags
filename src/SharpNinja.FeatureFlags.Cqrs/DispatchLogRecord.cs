@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11: Snapshot of a completed CQRS dispatch captured by <see cref="Dispatcher"/> for diagnostics/UI display.
+/// out-of-v1: snapshot of a completed CQRS dispatch captured by <see cref="Dispatcher"/> for diagnostics/UI display.
 /// </summary>
 /// <param name="StartedAt">When the dispatch call context started.</param>
 /// <param name="FinishedAt">When the dispatch completed.</param>
@@ -34,7 +34,7 @@ public sealed record DispatchLogRecord(
     string? ResultData = null);
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11: Lightweight serialized form of a <see cref="LogEntry"/> retained in dispatch history.
+/// out-of-v1: lightweight serialized form of a <see cref="LogEntry"/> retained in dispatch history.
 /// </summary>
 /// <param name="Timestamp">Entry timestamp.</param>
 /// <param name="Level">Log level.</param>

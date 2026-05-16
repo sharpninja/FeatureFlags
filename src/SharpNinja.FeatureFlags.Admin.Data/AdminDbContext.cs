@@ -4,6 +4,13 @@ using SharpNinja.FeatureFlags.Admin.Data.Entities;
 namespace SharpNinja.FeatureFlags.Admin.Data;
 
 /// <summary>FR-9 FR-11 TR-9: Abstract EF Core DbContext for the admin-plane store. Subclassed by each provider package.</summary>
+/// <remarks>
+/// EF Core <see cref="Microsoft.EntityFrameworkCore.DbContext"/> derivative; not thread-safe.
+/// Register with <c>AddDbContextPool</c> only when the host can guarantee scoped reset semantics.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 public abstract class AdminDbContext : DbContext
 {
     /// <summary>Initializes a new instance of <see cref="AdminDbContext"/> with caller-supplied options.</summary>

@@ -3,7 +3,7 @@ using SharpNinja.FeatureFlags.Abstractions;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// An <see cref="IHandlerSelector{TRequest,TResult}"/> that evaluates a feature flag
+/// out-of-v1: an <see cref="IHandlerSelector{TRequest,TResult}"/> that evaluates a feature flag
 /// and routes the request to one of two underlying selectors based on the result.
 /// When the flag evaluates to <c>true</c> the <c>enabledSelector</c> is used;
 /// when it evaluates to <c>false</c> the <c>disabledSelector</c> is used (or

@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Abstractions.Options;
 
 /// <summary>TR-9 v1 contract: multi-tenant deployment options for tenant-aware manifest and exposure flows.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 /// <param name="Enabled">Whether tenant isolation is enabled.</param>
 /// <param name="TenantContextKey">Evaluation context key used to carry tenant identity.</param>
 /// <param name="DefaultTenantId">Optional default tenant identifier for single-tenant hosts or local development.</param>

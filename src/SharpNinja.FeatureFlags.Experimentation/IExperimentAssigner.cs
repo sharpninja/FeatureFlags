@@ -2,7 +2,7 @@ using SharpNinja.FeatureFlags.Abstractions;
 
 namespace SharpNinja.FeatureFlags.Experimentation;
 
-/// <summary>Assigns subjects to experiment variants deterministically.</summary>
+/// <summary>out-of-v1: assigns subjects to experiment variants deterministically.</summary>
 public interface IExperimentAssigner
 {
     /// <summary>Assigns a subject to an experiment variant deterministically.</summary>

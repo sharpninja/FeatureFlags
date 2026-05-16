@@ -1,7 +1,7 @@
 namespace SharpNinja.FeatureFlags.Experimentation;
 
 /// <summary>
-/// FR-13 TR-12: Default <see cref="IExperimentAnalyzer"/> implementation that performs a
+/// out-of-v1: default <see cref="IExperimentAnalyzer"/> implementation that performs a
 /// two-proportion z-test for each treatment variant against a designated control,
 /// reporting conversion rate, relative lift, two-tailed p-value, and a 95% confidence
 /// interval on the absolute rate difference.

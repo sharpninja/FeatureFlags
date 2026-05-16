@@ -10,6 +10,9 @@ namespace SharpNinja.FeatureFlags.MediatR;
 /// request type, and the evaluation reason. Useful for experimentation pipelines
 /// that need to record which flag variant was active for a given request.
 /// </summary>
+/// <remarks>
+/// Stateless pipeline behavior; resolved per request. Emits exposure events after the inner handler returns.
+/// </remarks>
 /// <typeparam name="TRequest">The MediatR request type.</typeparam>
 /// <typeparam name="TResponse">The MediatR response type.</typeparam>
 public sealed class ExposureLoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>

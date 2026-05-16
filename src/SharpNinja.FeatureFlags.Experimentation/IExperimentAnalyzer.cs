@@ -1,6 +1,6 @@
 namespace SharpNinja.FeatureFlags.Experimentation;
 
-/// <summary>Performs statistical analysis on experiment observation data.</summary>
+/// <summary>out-of-v1: performs statistical analysis on experiment observation data.</summary>
 public interface IExperimentAnalyzer
 {
     /// <summary>

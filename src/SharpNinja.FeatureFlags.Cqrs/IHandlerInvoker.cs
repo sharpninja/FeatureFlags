@@ -1,7 +1,7 @@
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// Invokes a command handler without reflection, enabling AOT-safe dispatch.
+/// out-of-v1: invokes a command handler without reflection, enabling AOT-safe dispatch.
 /// Implementations wrap the handler's <c>HandleAsync</c> method directly so no
 /// <c>MethodInfo.Invoke</c> calls are required at runtime.
 /// </summary>
@@ -21,7 +21,7 @@ public interface IHandlerInvoker<TRequest, TResult>
 }
 
 /// <summary>
-/// Invokes a query handler without reflection, enabling AOT-safe dispatch over the query path.
+/// out-of-v1: invokes a query handler without reflection, enabling AOT-safe dispatch over the query path.
 /// </summary>
 /// <typeparam name="TRequest">The query type. Must implement <see cref="IQuery{TResult}"/>.</typeparam>
 /// <typeparam name="TResult">The result value type.</typeparam>

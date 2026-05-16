@@ -1,6 +1,10 @@
 namespace SharpNinja.FeatureFlags.Abstractions;
 
 /// <summary>TR-10 Phase 0 contract: diagnostic state exposed for host debug menus.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// </remarks>
 /// <param name="ProductId">Compile-time product identifier.</param>
 /// <param name="ReleaseId">Compile-time release identifier.</param>
 /// <param name="ManifestId">Active manifest identifier.</param>

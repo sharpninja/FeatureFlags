@@ -12,6 +12,8 @@
 
 **FR-11 - Multi-environment.** The admin plane shall support built-in development / staging / production environments plus customer-defined custom environments per the SharpNinja deployment model. Promotion between environments shall be an explicit, audited action.
 
+Custom environment names may be authored in DRAFT state for organizational and labeling purposes within the admin plane, but they are normalized to the three built-in `SharpNinjaDeploymentEnvironment` values (Dev, Staging, Prod) at publish time. The published manifest never contains custom environment names; the manifest validator enforces the three-value restriction as the contract for all consumer-facing manifests.
+
 ## FR-12 Schema validation in CI.
 
 **FR-12 - Schema validation in CI.** The CLI shall validate flag definitions, rule syntax, type safety, and Product-scope correctness in CI, failing builds on violations before any binary ships.

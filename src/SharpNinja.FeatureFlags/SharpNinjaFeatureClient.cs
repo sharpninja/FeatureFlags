@@ -9,6 +9,17 @@ using SharpNinja.FeatureFlags.Evaluation;
 namespace SharpNinja.FeatureFlags;
 
 /// <summary>FR-1 FR-6 FR-8 FR-10 TR-5 TR-7 TR-11 Phase 1 SDK client that evaluates feature flags from the active manifest.</summary>
+/// <remarks>
+/// Thread-safe DI singleton. Evaluations never block on network state and never throw on missing flags;
+/// the configured default value is returned with <see cref="EvaluationReason.Default"/> when a key is absent.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-1"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-6"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-5"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-7"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed class SharpNinjaFeatureClient : ISharpNinjaFeatureClient
 {
     private const string ReleaseLineageContextKey = "ReleaseLineage";

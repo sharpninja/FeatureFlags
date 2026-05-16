@@ -1,6 +1,14 @@
 namespace SharpNinja.FeatureFlags.Admin;
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-11: Admin audit action types recorded by the runtime.</summary>
+/// <remarks>
+/// Members carry stable ordinal values that consumers may persist; treat the enumeration as part of the public contract.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public enum AdminAuditAction
 {
     /// <summary>FR-9: a flag draft was created.</summary>
@@ -17,6 +25,11 @@ public enum AdminAuditAction
 }
 
 /// <summary>TR-9 TR-11: Per-tenant, per-product RBAC metadata attached to an admin action.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="TenantId">Tenant identifier for the administrative action.</param>
 /// <param name="PrincipalId">Authenticated principal performing the action.</param>
 /// <param name="ProductIds">Product identifiers the principal is authorized to administer.</param>
@@ -28,6 +41,14 @@ public sealed record AdminRbacMetadata(
     IReadOnlyCollection<string> RoleIds);
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-11: Product and environment scoped flag draft mutation.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="FlagKey">Feature flag key.</param>
 /// <param name="EnvironmentName">Environment containing the draft.</param>
 /// <param name="ProductScope">Product identifiers allowed to evaluate the flag.</param>
@@ -47,6 +68,14 @@ public sealed record FeatureFlagDraftMutation(
     AdminRbacMetadata RbacMetadata);
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-11: Immutable snapshot of an authored flag draft.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="FlagKey">Feature flag key.</param>
 /// <param name="EnvironmentName">Environment containing the draft.</param>
 /// <param name="ProductScope">Product identifiers allowed to evaluate the flag.</param>
@@ -70,6 +99,13 @@ public sealed record FeatureFlagDraft(
     DateTimeOffset LastModifiedAt);
 
 /// <summary>FR-9 FR-11 TR-9 TR-11: Request to publish a flag draft for one environment.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="FlagKey">Feature flag key.</param>
 /// <param name="EnvironmentName">Environment to publish.</param>
 /// <param name="Reason">Reason for the publish action.</param>
@@ -81,6 +117,13 @@ public sealed record FeatureFlagPublishAction(
     AdminRbacMetadata RbacMetadata);
 
 /// <summary>FR-9 FR-11 TR-9 TR-11: Request to promote a flag draft between environments.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="FlagKey">Feature flag key.</param>
 /// <param name="SourceEnvironmentName">Source environment for promotion.</param>
 /// <param name="TargetEnvironmentName">Target environment for promotion.</param>
@@ -94,6 +137,15 @@ public sealed record FeatureFlagPromotionAction(
     AdminRbacMetadata RbacMetadata);
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-10 TR-11: Immutable admin audit entry.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="Sequence">Monotonic audit sequence number.</param>
 /// <param name="Action">Audit action type.</param>
 /// <param name="FlagKey">Feature flag key.</param>
@@ -123,6 +175,11 @@ public sealed record AdminAuditEntry(
     DateTimeOffset OccurredAt);
 
 /// <summary>TR-10 TR-11: Lightweight admin runtime metric snapshot.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="DraftCount">Current number of in-memory flag drafts.</param>
 /// <param name="AuditEntryCount">Current number of append-only audit entries.</param>
 /// <param name="PublishCount">Number of publish audit entries.</param>

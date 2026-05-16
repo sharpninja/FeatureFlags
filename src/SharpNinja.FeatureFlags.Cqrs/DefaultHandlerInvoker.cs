@@ -1,7 +1,7 @@
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// Default <see cref="IHandlerInvoker{TRequest,TResult}"/> implementation that invokes the
+/// out-of-v1: default <see cref="IHandlerInvoker{TRequest,TResult}"/> implementation that invokes the
 /// command handler's <c>HandleAsync</c> method directly without reflection.
 /// If the handler returns a failed <see cref="Result{TResult}"/>, an
 /// <see cref="InvalidOperationException"/> is thrown carrying the failure message.
@@ -36,7 +36,7 @@ public sealed record class DefaultHandlerInvoker<TRequest, TResult> : IHandlerIn
 }
 
 /// <summary>
-/// Default <see cref="IQueryHandlerInvoker{TRequest,TResult}"/> implementation that invokes
+/// out-of-v1: default <see cref="IQueryHandlerInvoker{TRequest,TResult}"/> implementation that invokes
 /// a query handler's <c>HandleAsync</c> method directly without reflection.
 /// If the handler returns a failed <see cref="Result{TResult}"/>, an
 /// <see cref="InvalidOperationException"/> is thrown carrying the failure message.

@@ -5,6 +5,13 @@ using Microsoft.Extensions.Options;
 namespace SharpNinja.FeatureFlags.Admin;
 
 /// <summary>FR-9 FR-10 FR-11 TR-9: Admin operation rights enforced by v1 RBAC.</summary>
+/// <remarks>
+/// Members carry stable ordinal values that consumers may persist; treat the enumeration as part of the public contract.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 public enum AdminRight
 {
     /// <summary>TR-9: permission to read Admin drafts, audit entries, UI, and metrics.</summary>
@@ -24,6 +31,11 @@ public enum AdminRight
 }
 
 /// <summary>TR-9 TR-11: authenticated Admin actor resolved from claims.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="PrincipalId">Stable principal identifier.</param>
 /// <param name="DisplayName">Human-readable display name.</param>
 /// <param name="TenantId">Tenant identifier.</param>
@@ -43,6 +55,13 @@ public sealed record AdminActor(
 }
 
 /// <summary>FR-9 FR-10 FR-11 TR-9: tenant, product, and environment scope for an Admin authorization decision.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 /// <param name="TenantId">Tenant identifier being accessed.</param>
 /// <param name="ProductIds">Product identifiers being accessed.</param>
 /// <param name="EnvironmentName">Optional environment being accessed.</param>
@@ -52,6 +71,11 @@ public sealed record AdminResourceScope(
     string? EnvironmentName);
 
 /// <summary>TR-9 TR-11: resolves authenticated Admin actors from ASP.NET Core claims principals.</summary>
+/// <remarks>
+/// v1 contract. Implementations are responsible for documenting their own thread-safety and lifecycle.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public interface IAdminActorResolver
 {
     /// <summary>TR-9: resolves the Admin actor from an authenticated principal.</summary>
@@ -62,6 +86,14 @@ public interface IAdminActorResolver
 }
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-11: product and tenant aware Admin RBAC decision service.</summary>
+/// <remarks>
+/// v1 contract. Implementations are responsible for documenting their own thread-safety and lifecycle.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public interface IAdminRbacAuthorizer
 {
     /// <summary>TR-9: authorizes one Admin permission against a scoped resource.</summary>
@@ -80,6 +112,11 @@ public interface IAdminRbacAuthorizer
 }
 
 /// <summary>TR-9 TR-11: result of an Admin RBAC decision.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <param name="Succeeded">Whether authorization succeeded.</param>
 /// <param name="FailureReason">Failure reason when authorization failed.</param>
 public sealed record AdminAuthorizationResult(bool Succeeded, string FailureReason)

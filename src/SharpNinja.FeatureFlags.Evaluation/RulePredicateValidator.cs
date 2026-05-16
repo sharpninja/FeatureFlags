@@ -8,12 +8,22 @@ using SharpNinja.FeatureFlags.Abstractions;
 namespace SharpNinja.FeatureFlags.Evaluation;
 
 /// <summary>FR-5 TR-2 v1 diagnostic emitted while validating a CEL rule predicate.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-5"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-2"/>
+/// </remarks>
 /// <param name="Code">Stable diagnostic code.</param>
 /// <param name="Message">Diagnostic message.</param>
 /// <param name="Position">Zero-based character position in the predicate.</param>
 public sealed record RulePredicateDiagnostic(string Code, string Message, int Position);
 
 /// <summary>FR-5 TR-2 v1 validation result for a CEL rule predicate.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-5"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-2"/>
+/// </remarks>
 /// <param name="IsValid">Indicates whether the predicate can be parsed and evaluated as a boolean expression.</param>
 /// <param name="Diagnostics">Validation diagnostics in deterministic order.</param>
 public sealed record RulePredicateValidationResult(
@@ -21,6 +31,11 @@ public sealed record RulePredicateValidationResult(
     IReadOnlyList<RulePredicateDiagnostic> Diagnostics);
 
 /// <summary>FR-5 TR-2 v1 trim-safe validator for the supported CEL rule subset.</summary>
+/// <remarks>
+/// Stateless. Returns a result aggregating every diagnostic discovered; never throws for malformed predicate text.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-5"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-2"/>
+/// </remarks>
 public static class RulePredicateValidator
 {
     /// <summary>FR-5 validates CEL syntax and boolean predicate typing.</summary>

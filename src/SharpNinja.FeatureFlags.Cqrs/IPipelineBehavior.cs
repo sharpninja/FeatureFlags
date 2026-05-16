@@ -1,7 +1,7 @@
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-005: Pipeline behavior that wraps handler execution with pre/post processing.
+/// out-of-v1: pipeline behavior that wraps handler execution with pre/post processing.
 /// Behaviors receive the request, <see cref="CallContext"/>, and a continuation delegate.
 /// Behaviors can short-circuit by returning <see cref="Result.Failure{T}(string)"/> without calling the continuation.
 /// Registration order determines execution order (outermost first).

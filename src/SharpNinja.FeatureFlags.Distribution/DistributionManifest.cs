@@ -6,6 +6,13 @@ using System.Text.Json;
 namespace SharpNinja.FeatureFlags.Distribution;
 
 /// <summary>FR-3 FR-6 TR-8 TR-9 v1 immutable Distribution manifest payload served to SDK clients.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-3"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-6"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// </remarks>
 /// <param name="ProductId">Product identifier addressed by the manifest.</param>
 /// <param name="ReleaseId">Release identifier addressed by the manifest.</param>
 /// <param name="Environment">Deployment environment addressed by the manifest.</param>

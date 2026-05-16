@@ -7,6 +7,9 @@ namespace SharpNinja.FeatureFlags;
 
 internal sealed class SharpNinjaActiveManifestStore : ISharpNinjaActiveManifestStore
 {
+    /// <summary>TR-8 v1 maximum manifest schemaVersion the SDK can interpret.</summary>
+    internal const int MaxSupportedSchemaVersion = 1;
+
     private static readonly Action<ILogger, string, Exception?> ManifestCacheRejected =
         LoggerMessage.Define<string>(
             LogLevel.Warning,
@@ -134,6 +137,19 @@ internal sealed class SharpNinjaActiveManifestStore : ISharpNinjaActiveManifestS
         try
         {
             envelope.Validate();
+
+            if (!TryReadSchemaVersion(envelope.ManifestJson, out int schemaVersion, out string? schemaError))
+            {
+                errorMessage = schemaError;
+                return null;
+            }
+
+            if (schemaVersion > MaxSupportedSchemaVersion)
+            {
+                errorMessage = $"Manifest schemaVersion '{schemaVersion}' exceeds the maximum supported version '{MaxSupportedSchemaVersion}'.";
+                return null;
+            }
+
             FeatureFlagManifest manifest = FeatureFlagManifest.Parse(envelope.ManifestJson);
 
             if (!string.Equals(manifest.ProductId, options.ProductId, StringComparison.Ordinal))
@@ -162,5 +178,29 @@ internal sealed class SharpNinjaActiveManifestStore : ISharpNinjaActiveManifestS
             errorMessage = exception.Message;
             return null;
         }
+    }
+
+    private static bool TryReadSchemaVersion(string manifestJson, out int schemaVersion, out string? errorMessage)
+    {
+        schemaVersion = 0;
+        try
+        {
+            using System.Text.Json.JsonDocument document = System.Text.Json.JsonDocument.Parse(manifestJson);
+            if (!document.RootElement.TryGetProperty("schemaVersion", out System.Text.Json.JsonElement value)
+                || value.ValueKind != System.Text.Json.JsonValueKind.Number
+                || !value.TryGetInt32(out schemaVersion))
+            {
+                errorMessage = "Manifest schemaVersion is missing or not an integer.";
+                return false;
+            }
+        }
+        catch (System.Text.Json.JsonException exception)
+        {
+            errorMessage = exception.Message;
+            return false;
+        }
+
+        errorMessage = null;
+        return true;
     }
 }

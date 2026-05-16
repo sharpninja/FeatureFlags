@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-001: Abstraction over <see cref="Dispatcher"/> for dispatching CQRS commands and queries.
+/// out-of-v1: abstraction over <see cref="Dispatcher"/> for dispatching CQRS commands and queries.
 /// Use this interface for dependency injection in consumer code and for mock-based unit testing.
 /// </summary>
 public interface IDispatcher

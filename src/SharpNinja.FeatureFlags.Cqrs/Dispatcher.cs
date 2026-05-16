@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-001, TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-003, TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-004: Central dispatcher for CQRS commands and queries.
+/// out-of-v1: central dispatcher for CQRS commands and queries.
 /// Resolves handlers from DI, wraps execution in pipeline behaviors, manages <see cref="CallContext"/>
 /// lifecycle, and implements <see cref="ILoggerProvider"/> for correlation-enriched logging.
 /// </summary>
@@ -234,7 +234,7 @@ public sealed class Dispatcher : IDispatcher, ILoggerProvider
     }
 
     /// <summary>
-    /// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-004: Logs the result of a dispatch call.
+    /// Logs the result of a dispatch call.
     /// Success → Debug, Failure with exception → Error, Failure without exception → Warning.
     /// </summary>
     private void LogResult<TResult>(Result<TResult> result, CallContext context, TimeSpan elapsed)
@@ -310,7 +310,7 @@ public sealed class Dispatcher : IDispatcher, ILoggerProvider
 }
 
 /// <summary>
-/// TEST-CQRS-MCPSERVER-001; TR-11; TR-MCP-CQRS-003: Logger created by <see cref="Dispatcher"/> as <see cref="ILoggerProvider"/>.
+/// out-of-v1: logger created by <see cref="Dispatcher"/> as <see cref="ILoggerProvider"/>.
 /// Enriches structured log entries with decomposed correlation context from active <see cref="CallContext"/>s.
 /// </summary>
 internal sealed class DispatcherLogger : ILogger

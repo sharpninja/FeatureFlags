@@ -1,6 +1,11 @@
 namespace SharpNinja.FeatureFlags.Abstractions;
 
 /// <summary>FR-8 TR-11 Phase 1 contract: immutable result returned by feature flag evaluation.</summary>
+/// <remarks>
+/// Immutable value; equality is structural; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-8"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 /// <typeparam name="T">Resolved value type.</typeparam>
 /// <param name="Value">Resolved feature flag value.</param>
 /// <param name="Reason">Reason the value was resolved.</param>

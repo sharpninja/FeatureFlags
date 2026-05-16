@@ -3,6 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace SharpNinja.FeatureFlags.Admin.Data.Postgres;
 
 /// <summary>FR-9 FR-11 TR-11: DI registration extensions for the PostgreSQL admin data provider.</summary>
+/// <remarks>
+/// Registration is idempotent for the Postgres provider; safe to call multiple times.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public static class PostgresAdminDataServiceCollectionExtensions
 {
     /// <summary>Registers PostgreSQL admin data-provider metadata and options.</summary>

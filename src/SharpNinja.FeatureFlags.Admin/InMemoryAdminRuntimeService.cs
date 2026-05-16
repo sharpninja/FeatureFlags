@@ -4,6 +4,16 @@ using SharpNinja.FeatureFlags.Abstractions.Options;
 namespace SharpNinja.FeatureFlags.Admin;
 
 /// <summary>FR-9 FR-10 FR-11 TR-9 TR-10 TR-11: DI-resident Admin authoring service backed by a durable store abstraction.</summary>
+/// <remarks>
+/// In-memory reference implementation; thread-safe for concurrent reads and writes via internal locking.
+/// Intended for tests and local development; state is lost on process restart.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-11"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-9"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-10"/>
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Technical-Requirements.md#tr-11"/>
+/// </remarks>
 public sealed class InMemoryAdminRuntimeService : IAdminRuntimeService
 {
     private static readonly Action<ILogger, string, string, long, Exception?> DraftCreated =

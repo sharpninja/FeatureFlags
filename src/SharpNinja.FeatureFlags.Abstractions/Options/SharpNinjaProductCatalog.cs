@@ -3,6 +3,10 @@ using System.Collections.ObjectModel;
 namespace SharpNinja.FeatureFlags.Abstractions.Options;
 
 /// <summary>FR-1 v1 contract: canonical product identifiers supported by the first release scope.</summary>
+/// <remarks>
+/// Stateless after construction; safe to share across threads.
+/// <see href="https://github.com/sharpninja/FeatureFlags/blob/main/docs/Project/wiki/github/Functional-Requirements.md#fr-1"/>
+/// </remarks>
 public static class SharpNinjaProductCatalog
 {
     private static readonly ReadOnlyCollection<string> ProductIds =

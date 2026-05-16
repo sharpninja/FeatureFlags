@@ -1,6 +1,6 @@
 namespace SharpNinja.FeatureFlags.Experimentation;
 
-/// <summary>Result of assigning a subject to an experiment variant.</summary>
+/// <summary>out-of-v1: result of assigning a subject to an experiment variant.</summary>
 /// <param name="ExperimentId">The experiment identifier.</param>
 /// <param name="SubjectId">The subject identifier (user/device ID).</param>
 /// <param name="VariantKey">The assigned variant key.</param>

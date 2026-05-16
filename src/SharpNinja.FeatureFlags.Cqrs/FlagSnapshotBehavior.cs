@@ -3,7 +3,7 @@ using SharpNinja.FeatureFlags.Abstractions;
 namespace SharpNinja.FeatureFlags.Cqrs;
 
 /// <summary>
-/// FR-12 TR-11: Pipeline behavior that snapshots a configured set of feature flag evaluations
+/// out-of-v1: pipeline behavior that snapshots a configured set of feature flag evaluations
 /// into <see cref="CallContext.FlagSnapshot"/> before invoking the next step in the pipeline.
 /// Downstream handlers and behaviors read a stable view of flag state for the duration of the dispatch.
 /// </summary>
