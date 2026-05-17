@@ -116,7 +116,7 @@ internal static class GeneratorTestHelper
         }
 
         // Abstractions assembly (contains the attribute types the generators look for).
-        string abstractionsPath = typeof(SharpNinja.FeatureFlags.Abstractions.Attributes.ProductScopeAttribute).Assembly.Location;
+        string abstractionsPath = typeof(SharpNinja.FeatureFlags.Abstractions.ProductScopeAttribute).Assembly.Location;
         if (!string.IsNullOrEmpty(abstractionsPath) && File.Exists(abstractionsPath))
         {
             refs.Add(MetadataReference.CreateFromFile(abstractionsPath));

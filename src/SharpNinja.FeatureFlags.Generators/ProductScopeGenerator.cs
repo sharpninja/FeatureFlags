@@ -17,7 +17,7 @@ namespace SharpNinja.FeatureFlags.Generators;
 public sealed class ProductScopeGenerator : IIncrementalGenerator
 {
     private const string ProductScopeAttributeFullName =
-        "SharpNinja.FeatureFlags.Abstractions.Attributes.ProductScopeAttribute";
+        "SharpNinja.FeatureFlags.Abstractions.ProductScopeAttribute";
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -55,11 +55,32 @@ public sealed class ProductScopeGenerator : IIncrementalGenerator
                 continue;
             }
 
-            if (attr.ConstructorArguments.Length > 0
-                && attr.ConstructorArguments[0].Value is string productId
-                && !string.IsNullOrWhiteSpace(productId))
+            // v1.0.3 widened the ctor to params string[]. ConstructorArguments[0]
+            // is now a TypedConstant of kind Array whose Values element list holds
+            // the product ids. Pick the first non-empty entry as the canonical
+            // generated constant value (multi-product assemblies still expose a
+            // single ProductScopeConstants.ProductId for back-compat).
+            if (attr.ConstructorArguments.Length == 0)
             {
-                return productId.Trim();
+                continue;
+            }
+
+            TypedConstant firstArg = attr.ConstructorArguments[0];
+            if (firstArg.Kind == TypedConstantKind.Array && !firstArg.Values.IsDefault)
+            {
+                foreach (TypedConstant element in firstArg.Values)
+                {
+                    if (element.Value is string id && !string.IsNullOrWhiteSpace(id))
+                    {
+                        return id.Trim();
+                    }
+                }
+            }
+            else if (firstArg.Value is string legacyId && !string.IsNullOrWhiteSpace(legacyId))
+            {
+                // Backward compat path for any caller still binding via the
+                // v1.0.2 single-string ctor (covered by the params overload).
+                return legacyId.Trim();
             }
         }
 
