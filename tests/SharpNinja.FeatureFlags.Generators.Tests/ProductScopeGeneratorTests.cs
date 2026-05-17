@@ -19,7 +19,7 @@ public sealed class ProductScopeGeneratorTests
     public void EmitsProductScopeConstantsClassWhenAttributePresent()
     {
         const string source = """
-            using SharpNinja.FeatureFlags.Abstractions.Attributes;
+            using SharpNinja.FeatureFlags.Abstractions;
             [assembly: ProductScope("truckmate")]
             """;
 
@@ -43,7 +43,7 @@ public sealed class ProductScopeGeneratorTests
     {
         const string productId = "my-custom-product";
         string source = $"""
-            using SharpNinja.FeatureFlags.Abstractions.Attributes;
+            using SharpNinja.FeatureFlags.Abstractions;
             [assembly: ProductScope("{productId}")]
             """;
 
@@ -87,7 +87,7 @@ public sealed class ProductScopeGeneratorTests
     public void ProducesNoDiagnosticsWhenAttributePresent()
     {
         const string source = """
-            using SharpNinja.FeatureFlags.Abstractions.Attributes;
+            using SharpNinja.FeatureFlags.Abstractions;
             [assembly: ProductScope("truckmate")]
             """;
 
@@ -105,7 +105,7 @@ public sealed class ProductScopeGeneratorTests
     public void EmittedClassIsInternalStatic()
     {
         const string source = """
-            using SharpNinja.FeatureFlags.Abstractions.Attributes;
+            using SharpNinja.FeatureFlags.Abstractions;
             [assembly: ProductScope("truckmate")]
             """;
 
