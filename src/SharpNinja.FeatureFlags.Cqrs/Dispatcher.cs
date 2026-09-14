@@ -219,6 +219,8 @@ public sealed class Dispatcher : IDispatcher, ILoggerProvider
         }
     }
 
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(ICommandHandler<,>))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(IQueryHandler<,>))]
     private static async Task<Result<TResult>> InvokeHandler<TResult>(
         object handler,
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type handlerType,

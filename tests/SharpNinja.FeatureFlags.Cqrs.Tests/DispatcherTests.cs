@@ -178,4 +178,23 @@ public class DispatcherTests
         Assert.True(logger.IsEnabled(LogLevel.Information));
         Assert.False(logger.IsEnabled(LogLevel.None));
     }
+    /// <summary>Verifies the Android trimming roots for reflected handler interface methods.</summary>
+    [Fact]
+    public void InvokeHandlerRootsTrimmedCommandAndQueryHandlerMethods()
+    {
+        var method = typeof(Dispatcher).GetMethod(
+            "InvokeHandler",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.NotNull(method);
+
+        Type[] rootedTypes = method!
+            .GetCustomAttributes(typeof(System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute), inherit: false)
+            .Cast<System.Diagnostics.CodeAnalysis.DynamicDependencyAttribute>()
+            .Select(attribute => attribute.Type)
+            .OfType<Type>()
+            .ToArray();
+
+        Assert.Contains(typeof(ICommandHandler<,>), rootedTypes);
+        Assert.Contains(typeof(IQueryHandler<,>), rootedTypes);
+    }
 }
