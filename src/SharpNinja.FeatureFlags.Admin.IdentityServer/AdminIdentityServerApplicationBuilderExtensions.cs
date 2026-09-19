@@ -28,9 +28,9 @@ public static class AdminIdentityServerApplicationBuilderExtensions
         await using AsyncServiceScope scope = services.CreateAsyncScope();
         AdminIdentityDbContext db = scope.ServiceProvider.GetRequiredService<AdminIdentityDbContext>();
         string providerName = db.Database.ProviderName ?? "";
-        bool hasMigrations = db.Database.GetMigrations().Any();
-        bool useMigrate = db.Database.IsRelational()
-            && hasMigrations
+        bool isRelational = db.Database.IsRelational();
+        bool hasMigrations = isRelational && db.Database.GetMigrations().Any();
+        bool useMigrate = hasMigrations
             && !providerName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase);
         if (useMigrate)
         {
