@@ -8,12 +8,14 @@ COPY Directory.Build.props ./
 COPY Directory.Build.targets ./
 COPY NuGet.config ./
 COPY src/SharpNinja.FeatureFlags.Abstractions/SharpNinja.FeatureFlags.Abstractions.csproj src/SharpNinja.FeatureFlags.Abstractions/
+COPY src/SharpNinja.FeatureFlags.Admin.IdentityServer/SharpNinja.FeatureFlags.Admin.IdentityServer.csproj src/SharpNinja.FeatureFlags.Admin.IdentityServer/
 COPY src/SharpNinja.FeatureFlags.Admin/SharpNinja.FeatureFlags.Admin.csproj src/SharpNinja.FeatureFlags.Admin/
 COPY src/SharpNinja.FeatureFlags.Experimentation/SharpNinja.FeatureFlags.Experimentation.csproj src/SharpNinja.FeatureFlags.Experimentation/
 COPY src/SharpNinja.FeatureFlags.Admin.Blazor/SharpNinja.FeatureFlags.Admin.Blazor.csproj src/SharpNinja.FeatureFlags.Admin.Blazor/
 RUN dotnet restore src/SharpNinja.FeatureFlags.Admin.Blazor/SharpNinja.FeatureFlags.Admin.Blazor.csproj -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
 COPY src/SharpNinja.FeatureFlags.Abstractions/ src/SharpNinja.FeatureFlags.Abstractions/
+COPY src/SharpNinja.FeatureFlags.Admin.IdentityServer/ src/SharpNinja.FeatureFlags.Admin.IdentityServer/
 COPY src/SharpNinja.FeatureFlags.Admin/ src/SharpNinja.FeatureFlags.Admin/
 COPY src/SharpNinja.FeatureFlags.Experimentation/ src/SharpNinja.FeatureFlags.Experimentation/
 COPY src/SharpNinja.FeatureFlags.Admin.Blazor/ src/SharpNinja.FeatureFlags.Admin.Blazor/
