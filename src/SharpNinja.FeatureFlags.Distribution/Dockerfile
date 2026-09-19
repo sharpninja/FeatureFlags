@@ -8,10 +8,14 @@ COPY Directory.Build.props ./
 COPY Directory.Build.targets ./
 COPY NuGet.config ./
 COPY src/SharpNinja.FeatureFlags.Abstractions/SharpNinja.FeatureFlags.Abstractions.csproj src/SharpNinja.FeatureFlags.Abstractions/
+COPY src/SharpNinja.FeatureFlags.Evaluation/SharpNinja.FeatureFlags.Evaluation.csproj src/SharpNinja.FeatureFlags.Evaluation/
+COPY src/SharpNinja.FeatureFlags.Manifest/SharpNinja.FeatureFlags.Manifest.csproj src/SharpNinja.FeatureFlags.Manifest/
 COPY src/SharpNinja.FeatureFlags.Distribution/SharpNinja.FeatureFlags.Distribution.csproj src/SharpNinja.FeatureFlags.Distribution/
 RUN dotnet restore src/SharpNinja.FeatureFlags.Distribution/SharpNinja.FeatureFlags.Distribution.csproj -p:TargetFramework=net10.0 -p:TargetFrameworks=net10.0
 
 COPY src/SharpNinja.FeatureFlags.Abstractions/ src/SharpNinja.FeatureFlags.Abstractions/
+COPY src/SharpNinja.FeatureFlags.Evaluation/ src/SharpNinja.FeatureFlags.Evaluation/
+COPY src/SharpNinja.FeatureFlags.Manifest/ src/SharpNinja.FeatureFlags.Manifest/
 COPY src/SharpNinja.FeatureFlags.Distribution/ src/SharpNinja.FeatureFlags.Distribution/
 RUN find src -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
 RUN dotnet publish src/SharpNinja.FeatureFlags.Distribution/SharpNinja.FeatureFlags.Distribution.csproj --configuration Release --framework net10.0 --output /app/publish /p:TargetFrameworks=net10.0 /p:UseAppHost=false

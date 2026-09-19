@@ -1,0 +1,172 @@
+name: truckmate-featureflags-prod
+volumes:
+  featureflags-sqlserver: {}
+  featureflags-postgres: {}
+services:
+  admin-blazor:
+    build:
+      context: .
+      dockerfile: src/SharpNinja.FeatureFlags.Admin.Blazor/Dockerfile
+    ports:
+      - 18082:8080
+    depends_on:
+      admin:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      FeatureFlags__Products__1: drivermate
+      Duende__LicenseKey: ${DUENDE_LICENSE_KEY}
+      ASPNETCORE_ENVIRONMENT: Production
+      AdminIdentityServer__Authority: http://admin:8080
+      FeatureFlags__Products__2: gigdriving
+      FeatureFlags__Tenancy__Mode: MultiTenant
+      AdminIdentityServer__ClientId: sharpninja-admin
+      ASPNETCORE_URLS: http://+:8080
+      AdminIdentityServer__PublicIssuer: http://localhost:18080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:?Set protected PostgreSQL password}
+      FeatureFlags__Products__0: truckmate
+    image: sharpninja-featureflags-admin-blazor:truckmate-prod
+    networks:
+      - featureflags
+  distribution:
+    build:
+      context: .
+      dockerfile: src/SharpNinja.FeatureFlags.Distribution/Dockerfile
+    ports:
+      - 7148:8080
+    depends_on:
+      sqlserver:
+        condition: service_started
+      admin:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      FeatureFlags__Tenancy__Mode: MultiTenant
+      FeatureFlags__ExposureRetention__UserDefined: "true"
+      Distribution__DefaultEnvironment: Production
+      Distribution__Storage__Mode: FileSystem
+      Distribution__ApiKeys__gigdriving__0: ${FEATUREFLAGS_GIGDRIVING_DISTRIBUTION_KEY:?Set protected distribution key}
+      ASPNETCORE_URLS: http://+:8080
+      FeatureFlags__ReleaseLineage__Mode: SemVerChannelBuild
+      AdminIdentityServer__PublicIssuer: http://localhost:18080
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:?Set protected PostgreSQL password}
+      AdminIdentityServer__Audience: sharpninja.admin.api
+      AdminIdentityServer__Authority: http://admin:8080
+      Distribution__Authorization__RequireDeviceAttestation: "false"
+      ASPNETCORE_ENVIRONMENT: Production
+      Duende__LicenseKey: ${DUENDE_LICENSE_KEY}
+      FeatureFlags__Products__0: truckmate
+      Distribution__Cdn__EnableCacheHeaders: "true"
+      Distribution__Cdn__ManifestMaxAgeSeconds: "60"
+      Distribution__DeviceAttestation__TestTokens__truckmate__0: ${FEATUREFLAGS_TRUCKMATE_ATTESTATION_TOKEN:?Set protected attestation token}
+      Distribution__ApiKeys__drivermate__0: ${FEATUREFLAGS_DRIVERMATE_DISTRIBUTION_KEY:?Set protected distribution key}
+      Distribution__Storage__RootPath: /data/distribution
+      Distribution__Authorization__PublicManifestVerificationKeyPath: /etc/featureflags/public-key.ed25519
+      Distribution__Cdn__ManifestStaleIfErrorSeconds: "3600"
+      FeatureFlags__Products__2: gigdriving
+      Distribution__ApiKeys__truckmate__0: ${FEATUREFLAGS_TRUCKMATE_DISTRIBUTION_KEY:?Set protected distribution key}
+      ConnectionStrings__SqlServer: Server=sqlserver,1433;Database=FeatureFlags;User Id=sa;Password=${FEATUREFLAGS_SQLSERVER_PASSWORD:?Set protected SQL Server password};Encrypt=True;TrustServerCertificate=True
+      Distribution__DeviceAttestation__TestTokens__drivermate__0: ${FEATUREFLAGS_DRIVERMATE_ATTESTATION_TOKEN:?Set protected attestation token}
+      FeatureFlags__Environments__AllowCustom: "true"
+      FeatureFlags__Products__1: drivermate
+      Distribution__Cdn__ManifestStaleWhileRevalidateSeconds: "300"
+    image: sharpninja-featureflags-distribution:truckmate-prod
+    volumes:
+      - ${FEATUREFLAGS_DISTRIBUTION_ROOT:?Set desktop distribution root}:/data/distribution
+      - ${FEATUREFLAGS_PUBLIC_KEY_PATH:?Set trusted public key path}:/etc/featureflags/public-key.ed25519:ro
+    networks:
+      - featureflags
+  admin:
+    build:
+      context: .
+      dockerfile: src/SharpNinja.FeatureFlags.Admin/Dockerfile
+    ports:
+      - 18080:8080
+    depends_on:
+      sqlserver:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__SqlServer: Server=sqlserver,1433;Database=FeatureFlags;User Id=sa;Password=${FEATUREFLAGS_SQLSERVER_PASSWORD:?Set protected SQL Server password};Encrypt=True;TrustServerCertificate=True
+      AdminIdentityServer__Audience: sharpninja.admin.api
+      AdminIdentityServer__PostLogoutRedirectUris__0: http://admin-blazor:8080/signout-callback-oidc
+      AdminIdentityServer__PublicIssuer: http://localhost:18080
+      FeatureFlags__Products__1: drivermate
+      AdminIdentityServer__PostLogoutRedirectUris__1: http://localhost:18082/signout-callback-oidc
+      AdminIdentityServer__RedirectUris__1: http://localhost:18082/signin-oidc
+      FeatureFlags__Tenancy__Mode: MultiTenant
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+      FeatureFlags__Products__2: gigdriving
+      FeatureFlags__ExposureRetention__UserDefined: "true"
+      FeatureFlags__Environments__AllowCustom: "true"
+      Duende__LicenseKey: ${DUENDE_LICENSE_KEY}
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:?Set protected PostgreSQL password}
+      FeatureFlags__ReleaseLineage__Mode: SemVerChannelBuild
+      AdminIdentityServer__ServiceClientSecret: ${FEATUREFLAGS_SERVICE_CLIENT_SECRET:?Set protected service client secret}
+      AdminIdentityServer__Authority: http://admin:8080
+      AdminIdentityServer__RedirectUris__0: http://admin-blazor:8080/signin-oidc
+      FeatureFlags__Products__0: truckmate
+    image: sharpninja-featureflags-admin:truckmate-prod
+    networks:
+      - featureflags
+  ngrok:
+    ports:
+      - 4040:4040
+    depends_on:
+      - admin
+      - distribution
+    environment: {}
+    image: sha256:e0e8a023113fec7423d0a11de19e220823c4e374caa73dc314661813c5310c5e
+    pull_policy: never
+    volumes:
+      - ./ngrok.yml:/etc/ngrok/ngrok.yml:ro
+      - ${FEATUREFLAGS_NGROK_CONFIG:?Set protected ngrok config path}:/etc/ngrok/credentials.yml:ro
+    networks:
+      - featureflags
+    command:
+      - start
+      - --all
+      - --config
+      - /etc/ngrok/ngrok.yml
+      - --config
+      - /etc/ngrok/credentials.yml
+  sqlserver:
+    ports:
+      - 11433:1433
+    environment:
+      MSSQL_SA_PASSWORD: ${FEATUREFLAGS_SQLSERVER_PASSWORD:?Set protected SQL Server password}
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+    image: sha256:90488d58c6a5c19f24ff716e14330b85b5b26ee54b44a36ea24e6206533e7edd
+    pull_policy: never
+    volumes:
+      - featureflags-sqlserver:/var/opt/mssql
+    networks:
+      - featureflags
+  postgres:
+    ports:
+      - 15432:5432
+    environment:
+      POSTGRES_DB: featureflags
+      POSTGRES_USER: featureflags
+      POSTGRES_PASSWORD: ${FEATUREFLAGS_POSTGRES_PASSWORD:?Set protected PostgreSQL password}
+    image: sha256:4ad81f72475d54834d03eb3e643dbc2dcf85bfbe543a5480aa1436facf774632
+    pull_policy: never
+    volumes:
+      - featureflags-postgres:/var/lib/postgresql/data
+    networks:
+      - featureflags
+    healthcheck:
+      interval: 10s
+      test:
+        - CMD-SHELL
+        - pg_isready -U featureflags -d featureflags
+      timeout: 5s
+      retries: 10
+networks:
+  featureflags:
+    name: truckmate-featureflags-prod

@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SharpNinja.FeatureFlags.Abstractions\SharpNinja.FeatureFlags.Abstractions.csproj" />
     <ProjectReference Include="..\SharpNinja.FeatureFlags.Evaluation\SharpNinja.FeatureFlags.Evaluation.csproj" />
+    <ProjectReference Include="..\SharpNinja.FeatureFlags.Manifest\SharpNinja.FeatureFlags.Manifest.csproj" />
   </ItemGroup>
 
   <ItemGroup>

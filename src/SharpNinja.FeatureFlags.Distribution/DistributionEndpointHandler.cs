@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using SharpNinja.FeatureFlags.Manifest;
 
 namespace SharpNinja.FeatureFlags.Distribution;
 
@@ -17,6 +18,12 @@ internal sealed class DistributionEndpointHandler
             LogLevel.Warning,
             new EventId(2, nameof(MalformedExposureBatchRejected)),
             "Rejected malformed exposure batch.");
+
+    private static readonly Action<ILogger, string, string, string, Exception?> InvalidPublicManifestRejected =
+        LoggerMessage.Define<string, string, string>(
+            LogLevel.Error,
+            new EventId(3, nameof(InvalidPublicManifestRejected)),
+            "Rejected public manifest with invalid signature for {ProductId}/{ReleaseId}/{Environment}.");
 
     private readonly IDistributionManifestRegistry manifestRegistry;
     private readonly IExposureEventStore exposureEventStore;
@@ -87,6 +94,12 @@ internal sealed class DistributionEndpointHandler
             return Results.NotFound();
         }
 
+        if (!VerifyPublicManifest(manifest))
+        {
+            InvalidPublicManifestRejected(logger, productId, releaseId, resolvedEnvironment, null);
+            return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+        }
+
         if (TryGetIfNoneMatch(context, out string? ifNoneMatch)
             && DistributionManifest.MatchesETag(ifNoneMatch, manifest.ETag))
         {
@@ -131,6 +144,12 @@ internal sealed class DistributionEndpointHandler
         {
             metrics.RecordManifestCacheMiss();
             return Results.NotFound();
+        }
+
+        if (!VerifyPublicManifest(manifest))
+        {
+            InvalidPublicManifestRejected(logger, productId, releaseId, resolvedEnvironment, null);
+            return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
 
         if (manifest.IsNotModifiedSince(since))
@@ -199,6 +218,27 @@ internal sealed class DistributionEndpointHandler
             releaseId,
             environment,
             cancellationToken);
+    }
+
+    private bool VerifyPublicManifest(DistributionManifest manifest)
+    {
+        string? path = options.Value.PublicManifestVerificationKeyPath;
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return true;
+        }
+
+        try
+        {
+            return SignedManifestEd25519Verifier.Verify(manifest.Json, File.ReadAllBytes(path));
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or ArgumentException
+            or NotSupportedException)
+        {
+            return false;
+        }
     }
 
     private string NormalizeEnvironment(string? environment)

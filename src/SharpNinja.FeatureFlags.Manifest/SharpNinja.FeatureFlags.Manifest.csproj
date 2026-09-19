@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SharpNinja.FeatureFlags.Abstractions\SharpNinja.FeatureFlags.Abstractions.csproj" />
     <ProjectReference Include="..\SharpNinja.FeatureFlags.Evaluation\SharpNinja.FeatureFlags.Evaluation.csproj" />
+    <PackageReference Include="BouncyCastle.Cryptography" />
   </ItemGroup>
 
   <ItemGroup>

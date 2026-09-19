@@ -59,6 +59,9 @@ public sealed record SharpNinjaFeatureFlagOptions(
     /// <summary>FR-3 TR-6 v1 contract: optional durable path for the last verified signed manifest envelope.</summary>
     public string? ManifestCachePath { get; init; }
 
+    /// <summary>Trusted raw Ed25519 public key for cached and remote manifest activation.</summary>
+    public ReadOnlyMemory<byte> ManifestPublicKey { get; init; }
+
     /// <summary>FR-8 TR-7 v1 contract: optional durable path for the exposure event outbox.</summary>
     public string? ExposureOutboxPath { get; init; }
 
@@ -115,6 +118,11 @@ public sealed record SharpNinjaFeatureFlagOptions(
                 nameof(ExposureUploadBatchSize),
                 ExposureUploadBatchSize,
                 "Exposure upload batch size must be greater than zero.");
+        }
+
+        if (!ManifestPublicKey.IsEmpty && ManifestPublicKey.Length != 32)
+        {
+            throw new ArgumentException("Manifest public key must be a raw 32-byte Ed25519 key.", nameof(ManifestPublicKey));
         }
 
         if (ManifestCachePath is not null && string.IsNullOrWhiteSpace(ManifestCachePath))

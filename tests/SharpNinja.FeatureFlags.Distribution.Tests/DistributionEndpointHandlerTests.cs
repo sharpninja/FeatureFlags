@@ -1,4 +1,8 @@
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Signers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -391,6 +395,98 @@ public sealed class DistributionEndpointHandlerTests
         Assert.Contains("featureflags-distribution:", compose, StringComparison.Ordinal);
     }
 
+    /// <summary>TEST-GATEWAY-006: a trusted signed manifest is readable without a reusable app API key.</summary>
+    [Fact]
+    public async Task PublicSignedManifestReadRequiresValidSignatureAndKeepsWritesProtected()
+    {
+        (string signedJson, string publicKeyPath) = CreateSignedManifestFixture();
+        try
+        {
+            using DistributionTestScope scope = CreateScope(builder =>
+            {
+                var property = typeof(SharpNinjaDistributionBuilder).GetProperty("PublicManifestVerificationKeyPath");
+                Assert.NotNull(property);
+                property.SetValue(builder, publicKeyPath);
+            });
+            await scope.RegisterManifestAsync(signedJson);
+
+            DefaultHttpContext publicContext = scope.CreateContext(apiKey: string.Empty);
+            IResult publicResult = await scope.Handler.GetManifestAsync(
+                publicContext, ProductId, ReleaseId, EnvironmentName, CancellationToken.None);
+            (int publicStatus, string publicBody) = await ExecuteAsync(publicResult, publicContext);
+            Assert.Equal(StatusCodes.Status200OK, publicStatus);
+            Assert.Contains("\"signature\"", publicBody, StringComparison.Ordinal);
+
+            DefaultHttpContext writeContext = scope.CreateContext(
+                apiKey: string.Empty,
+                body: "{\"productId\":\"truckmate\",\"releaseId\":\"truckmate-1.2.3-stable-4\",\"environment\":\"Development\",\"events\":[{\"flagKey\":\"new-dashboard\",\"resolvedValue\":true,\"matchedRuleIndex\":0,\"contextFingerprint\":\"ctx-1\",\"timestamp\":\"2026-05-14T14:00:00Z\"}]}");
+            IResult writeResult = await scope.Handler.PostExposureAsync(writeContext, CancellationToken.None);
+            (int writeStatus, _) = await ExecuteAsync(writeResult, writeContext);
+            Assert.Equal(StatusCodes.Status401Unauthorized, writeStatus);
+        }
+        finally
+        {
+            File.Delete(publicKeyPath);
+        }
+    }
+
+    /// <summary>TEST-GATEWAY-006: a changed signed payload fails closed before a public response.</summary>
+    [Fact]
+    public async Task PublicManifestReadRejectsPostSignaturePayloadMutation()
+    {
+        (string signedJson, string publicKeyPath) = CreateSignedManifestFixture();
+        try
+        {
+            JsonObject altered = (JsonObject)JsonNode.Parse(signedJson)!;
+            altered["flags"] = new JsonArray(new JsonObject { ["key"] = "tampered" });
+            using DistributionTestScope scope = CreateScope(builder =>
+            {
+                var property = typeof(SharpNinjaDistributionBuilder).GetProperty("PublicManifestVerificationKeyPath");
+                Assert.NotNull(property);
+                property.SetValue(builder, publicKeyPath);
+            });
+            await scope.RegisterManifestAsync(altered.ToJsonString());
+
+            DefaultHttpContext context = scope.CreateContext(apiKey: string.Empty);
+            IResult result = await scope.Handler.GetManifestAsync(
+                context, ProductId, ReleaseId, EnvironmentName, CancellationToken.None);
+            (int status, _) = await ExecuteAsync(result, context);
+            Assert.Equal(StatusCodes.Status503ServiceUnavailable, status);
+        }
+        finally
+        {
+            File.Delete(publicKeyPath);
+        }
+    }
+
+    private static (string Json, string PublicKeyPath) CreateSignedManifestFixture()
+    {
+        byte[] seed = Enumerable.Range(1, 32).Select(static value => (byte)value).ToArray();
+        var privateKey = new Ed25519PrivateKeyParameters(seed, 0);
+        JsonObject root = (JsonObject)JsonNode.Parse(ManifestJson)!;
+        var signature = new JsonObject
+        {
+            ["algorithm"] = "Ed25519",
+            ["keyId"] = "test-key",
+            ["value"] = string.Empty,
+        };
+        root["signature"] = signature;
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        {
+            root.WriteTo(writer);
+        }
+
+        var signer = new Ed25519Signer();
+        signer.Init(forSigning: true, privateKey);
+        byte[] canonical = stream.ToArray();
+        signer.BlockUpdate(canonical, 0, canonical.Length);
+        signature["value"] = Convert.ToBase64String(signer.GenerateSignature());
+        string keyPath = Path.Combine(Path.GetTempPath(), "featureflags-public-" + Guid.NewGuid().ToString("N") + ".key");
+        File.WriteAllBytes(keyPath, privateKey.GeneratePublicKey().GetEncoded());
+        return (root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }), keyPath);
+    }
+
     private static DistributionTestScope CreateScope(Action<SharpNinjaDistributionBuilder>? configure = null)
     {
         var services = new ServiceCollection();
@@ -444,10 +540,10 @@ public sealed class DistributionEndpointHandlerTests
 
         public DefaultHttpContext LastContext { get; private set; } = new();
 
-        public async Task<DistributionManifest> RegisterManifestAsync()
+        public async Task<DistributionManifest> RegisterManifestAsync(string? json = null)
         {
             var updatedAt = new DateTimeOffset(2026, 5, 14, 14, 0, 0, TimeSpan.Zero);
-            DistributionManifest manifest = DistributionManifest.FromJson(ManifestJson, updatedAt);
+            DistributionManifest manifest = DistributionManifest.FromJson(json ?? ManifestJson, updatedAt);
             await ManifestRegistry.UpsertAsync(manifest, CancellationToken.None);
             return manifest;
         }

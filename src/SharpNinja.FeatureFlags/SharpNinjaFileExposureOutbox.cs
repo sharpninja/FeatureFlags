@@ -19,12 +19,15 @@ internal sealed class SharpNinjaFileExposureOutbox : ISharpNinjaExposureOutbox
     private readonly Lock gate = new();
     private readonly ILogger<SharpNinjaFileExposureOutbox> logger;
     private readonly SharpNinjaFeatureFlagOptions options;
+    private readonly TimeProvider timeProvider;
 
     public SharpNinjaFileExposureOutbox(
         SharpNinjaFeatureFlagOptions options,
+        TimeProvider timeProvider,
         ILogger<SharpNinjaFileExposureOutbox> logger)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
+        this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         events = LoadEvents();
     }
@@ -132,7 +135,7 @@ internal sealed class SharpNinjaFileExposureOutbox : ISharpNinjaExposureOutbox
             return;
         }
 
-        DateTimeOffset cutoff = DateTimeOffset.UtcNow.Subtract(retentionPeriod.Value);
+        DateTimeOffset cutoff = timeProvider.GetUtcNow().Subtract(retentionPeriod.Value);
         events.RemoveAll(exposureEvent => exposureEvent.Timestamp < cutoff);
     }
 

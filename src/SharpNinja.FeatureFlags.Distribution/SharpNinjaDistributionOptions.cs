@@ -8,6 +8,7 @@ internal sealed class SharpNinjaDistributionOptions
         IReadOnlyDictionary<string, List<string>> productApiKeys,
         IReadOnlyDictionary<string, List<string>> deviceAttestationTestTokens,
         bool requireDeviceAttestation,
+        string? publicManifestVerificationKeyPath,
         SharpNinjaDistributionStorageMode storageMode,
         string storageRootPath,
         bool enableCdnCacheHeaders,
@@ -30,6 +31,7 @@ internal sealed class SharpNinjaDistributionOptions
             static pair => (IReadOnlyList<string>)pair.Value.ToArray(),
             StringComparer.Ordinal);
         RequireDeviceAttestation = requireDeviceAttestation;
+        PublicManifestVerificationKeyPath = publicManifestVerificationKeyPath;
         StorageMode = storageMode;
         StorageRootPath = string.IsNullOrWhiteSpace(storageRootPath)
             ? Path.Combine(AppContext.BaseDirectory, "App_Data", "distribution")
@@ -47,6 +49,8 @@ internal sealed class SharpNinjaDistributionOptions
     public IReadOnlyDictionary<string, IReadOnlyList<string>> DeviceAttestationTestTokens { get; }
 
     public bool RequireDeviceAttestation { get; }
+
+    public string? PublicManifestVerificationKeyPath { get; }
 
     public SharpNinjaDistributionStorageMode StorageMode { get; }
 

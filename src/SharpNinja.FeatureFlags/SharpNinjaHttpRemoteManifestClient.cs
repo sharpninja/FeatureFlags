@@ -86,18 +86,26 @@ internal sealed class SharpNinjaHttpRemoteManifestClient : ISharpNinjaRemoteMani
         using JsonDocument document = JsonDocument.Parse(stream);
         JsonElement root = document.RootElement;
 
-        return new SignedManifestEnvelope(
+        // Distribution serves the signed manifest document itself. Retain
+        // support for the older explicit envelope wire shape as well.
+        if (!root.TryGetProperty("manifestJson", out _))
+        {
+            JsonElement signature = root.GetProperty("signature");
+            return new SignedManifestEnvelope(
+                root.GetRawText(),
+                ReadRequiredString(signature, "value"),
+                ReadRequiredString(signature, "keyId"),
+                ReadRequiredString(signature, "algorithm"));
+        }
+
+        SignedManifestEnvelope envelope = new(
             ReadRequiredString(root, "manifestJson"),
             ReadRequiredString(root, "signature"),
             ReadRequiredString(root, "signingKeyId"),
-            ReadRequiredString(root, "algorithm"))
+            ReadRequiredString(root, "algorithm"));
+        return envelope with
         {
-            ManifestId = ReadOptionalString(root, "manifestId")
-                ?? new SignedManifestEnvelope(
-                    ReadRequiredString(root, "manifestJson"),
-                    ReadRequiredString(root, "signature"),
-                    ReadRequiredString(root, "signingKeyId"),
-                    ReadRequiredString(root, "algorithm")).ManifestId,
+            ManifestId = ReadOptionalString(root, "manifestId") ?? envelope.ManifestId,
             ETag = ReadOptionalString(root, "eTag"),
             PublishedAt = ReadOptionalDateTimeOffset(root, "publishedAt"),
         };

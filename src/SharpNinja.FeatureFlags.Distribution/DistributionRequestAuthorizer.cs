@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Primitives;
+using Microsoft.Extensions.Options;
 
 namespace SharpNinja.FeatureFlags.Distribution;
 
@@ -23,6 +24,7 @@ internal sealed class DistributionRequestAuthorizer
     private readonly IDeviceAttestationPolicy attestationPolicy;
     private readonly IEnumerable<IDeviceAttestationValidator> attestationValidators;
     private readonly DistributionMetrics metrics;
+    private readonly IOptions<SharpNinjaDistributionOptions> options;
     private readonly ILogger<DistributionRequestAuthorizer> logger;
 
     public DistributionRequestAuthorizer(
@@ -30,18 +32,21 @@ internal sealed class DistributionRequestAuthorizer
         IDeviceAttestationPolicy attestationPolicy,
         IEnumerable<IDeviceAttestationValidator> attestationValidators,
         DistributionMetrics metrics,
+        IOptions<SharpNinjaDistributionOptions> options,
         ILogger<DistributionRequestAuthorizer> logger)
     {
         ArgumentNullException.ThrowIfNull(apiKeyValidator);
         ArgumentNullException.ThrowIfNull(attestationPolicy);
         ArgumentNullException.ThrowIfNull(attestationValidators);
         ArgumentNullException.ThrowIfNull(metrics);
+        ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.apiKeyValidator = apiKeyValidator;
         this.attestationPolicy = attestationPolicy;
         this.attestationValidators = attestationValidators;
         this.metrics = metrics;
+        this.options = options;
         this.logger = logger;
     }
 
@@ -50,8 +55,15 @@ internal sealed class DistributionRequestAuthorizer
         string productId,
         string releaseId,
         string environment,
-        CancellationToken cancellationToken) =>
-        AuthorizeAsync(context, productId, releaseId, environment, ManifestReadOperation, cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(options.Value.PublicManifestVerificationKeyPath))
+        {
+            return ValueTask.FromResult(DistributionAuthorizationResult.Success);
+        }
+
+        return AuthorizeAsync(context, productId, releaseId, environment, ManifestReadOperation, cancellationToken);
+    }
 
     public ValueTask<DistributionAuthorizationResult> AuthorizeExposureWriteAsync(
         HttpContext context,

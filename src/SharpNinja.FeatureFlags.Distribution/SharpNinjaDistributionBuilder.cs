@@ -28,6 +28,9 @@ public sealed class SharpNinjaDistributionBuilder
     /// <summary>TR-9 v1 requires a successful device-attestation validator for Distribution requests.</summary>
     public bool RequireDeviceAttestation { get; set; }
 
+    /// <summary>Trusted raw Ed25519 public key path enabling verified public manifest reads.</summary>
+    public string? PublicManifestVerificationKeyPath { get; set; }
+
     /// <summary>FR-3 FR-8 v1 built-in manifest and exposure storage mode.</summary>
     public SharpNinjaDistributionStorageMode StorageMode { get; set; }
 
@@ -52,6 +55,7 @@ public sealed class SharpNinjaDistributionBuilder
             ProductApiKeys,
             DeviceAttestationTestTokens,
             RequireDeviceAttestation,
+            PublicManifestVerificationKeyPath,
             StorageMode,
             StorageRootPath,
             EnableCdnCacheHeaders,

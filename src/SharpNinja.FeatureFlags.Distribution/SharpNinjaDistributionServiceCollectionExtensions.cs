@@ -85,6 +85,7 @@ public static class SharpNinjaDistributionServiceCollectionExtensions
             configuration["Authorization:RequireDeviceAttestation"]
             ?? configuration["DeviceAttestation:RequireDeviceAttestation"],
             builder.RequireDeviceAttestation);
+        builder.PublicManifestVerificationKeyPath = configuration["Authorization:PublicManifestVerificationKeyPath"];
         builder.StorageMode = ReadEnum(configuration["Storage:Mode"], builder.StorageMode);
         builder.StorageRootPath = ReadString(configuration["Storage:RootPath"], builder.StorageRootPath);
         builder.EnableCdnCacheHeaders = ReadBoolean(configuration["Cdn:EnableCacheHeaders"], builder.EnableCdnCacheHeaders);
