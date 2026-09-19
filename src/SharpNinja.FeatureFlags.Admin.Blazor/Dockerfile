@@ -19,6 +19,8 @@ COPY src/SharpNinja.FeatureFlags.Admin.IdentityServer/ src/SharpNinja.FeatureFla
 COPY src/SharpNinja.FeatureFlags.Admin/ src/SharpNinja.FeatureFlags.Admin/
 COPY src/SharpNinja.FeatureFlags.Experimentation/ src/SharpNinja.FeatureFlags.Experimentation/
 COPY src/SharpNinja.FeatureFlags.Admin.Blazor/ src/SharpNinja.FeatureFlags.Admin.Blazor/
+# Blazor references Admin code, but must publish its own appsettings.json.
+RUN rm src/SharpNinja.FeatureFlags.Admin/appsettings.json
 RUN find src -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
 RUN dotnet publish src/SharpNinja.FeatureFlags.Admin.Blazor/SharpNinja.FeatureFlags.Admin.Blazor.csproj --configuration Release --framework net10.0 --output /app/publish /p:TargetFrameworks=net10.0 /p:UseAppHost=false /p:DisableGitVersionTask=true
 
