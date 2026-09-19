@@ -18,7 +18,7 @@ COPY src/SharpNinja.FeatureFlags.Evaluation/ src/SharpNinja.FeatureFlags.Evaluat
 COPY src/SharpNinja.FeatureFlags.Manifest/ src/SharpNinja.FeatureFlags.Manifest/
 COPY src/SharpNinja.FeatureFlags.Distribution/ src/SharpNinja.FeatureFlags.Distribution/
 RUN find src -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
-RUN dotnet publish src/SharpNinja.FeatureFlags.Distribution/SharpNinja.FeatureFlags.Distribution.csproj --configuration Release --framework net10.0 --output /app/publish /p:TargetFrameworks=net10.0 /p:UseAppHost=false
+RUN dotnet publish src/SharpNinja.FeatureFlags.Distribution/SharpNinja.FeatureFlags.Distribution.csproj --configuration Release --framework net10.0 --output /app/publish /p:TargetFrameworks=net10.0 /p:UseAppHost=false /p:DisableGitVersionTask=true
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

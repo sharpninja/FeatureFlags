@@ -14,7 +14,7 @@ RUN dotnet restore src/SharpNinja.FeatureFlags.Admin/SharpNinja.FeatureFlags.Adm
 COPY src/SharpNinja.FeatureFlags.Abstractions/ src/SharpNinja.FeatureFlags.Abstractions/
 COPY src/SharpNinja.FeatureFlags.Admin/ src/SharpNinja.FeatureFlags.Admin/
 RUN find src -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
-RUN dotnet publish src/SharpNinja.FeatureFlags.Admin/SharpNinja.FeatureFlags.Admin.csproj --configuration Release --framework net10.0 --output /app/publish /p:TargetFrameworks=net10.0 /p:UseAppHost=false
+RUN dotnet publish src/SharpNinja.FeatureFlags.Admin/SharpNinja.FeatureFlags.Admin.csproj --configuration Release --framework net10.0 --output /app/publish /p:TargetFrameworks=net10.0 /p:UseAppHost=false /p:DisableGitVersionTask=true
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
