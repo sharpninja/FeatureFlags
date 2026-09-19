@@ -12,7 +12,7 @@ Seeded from `docs/Feature-Flag-Ecosystem-Planning-v0.1.md`.
 
 ## **FR-3 — Remote override.**
 
-**FR-3 — Remote override.** The SDK shall fetch newer Manifests from the Distribution service on a configurable cadence, verify their signature against an embedded public key, and persist them to a local cache. If verification fails, the new Manifest shall be discarded and the prior valid Manifest retained.
+**FR-3 — Remote override.** The SDK shall fetch newer Manifests from the Distribution service on a configurable cadence, verify their signature against an embedded public key, and persist them to a local cache. If verification fails, the new Manifest shall be discarded and the prior valid Manifest retained. A manifest signed on Windows must verify with the same trusted key in Linux Distribution and Android SDK; a host newline convention must not make valid signed content unavailable.
 
 ## **FR-4 — Deterministic evaluation.**
 

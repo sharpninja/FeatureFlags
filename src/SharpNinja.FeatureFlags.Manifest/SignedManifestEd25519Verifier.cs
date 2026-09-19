@@ -5,7 +5,7 @@ using Org.BouncyCastle.Crypto.Signers;
 
 namespace SharpNinja.FeatureFlags.Manifest;
 
-/// <summary>Verifies a complete signed manifest using the keytool's Ed25519 canonical form.</summary>
+/// <summary>FR-GATEWAY-006, TR-GATEWAY-OPS-005: verifies LF and legacy CRLF Ed25519 signed manifests.</summary>
 public static class SignedManifestEd25519Verifier
 {
     /// <summary>Returns true only when the signed JSON matches the trusted raw public key.</summary>
@@ -41,21 +41,8 @@ public static class SignedManifestEd25519Verifier
             }
 
             signature["value"] = string.Empty;
-            using var stream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
-            {
-                Indented = true,
-                SkipValidation = false,
-            }))
-            {
-                root.WriteTo(writer);
-            }
-
-            byte[] canonical = stream.ToArray();
-            var verifier = new Ed25519Signer();
-            verifier.Init(forSigning: false, new Ed25519PublicKeyParameters(publicKeyBytes.ToArray(), 0));
-            verifier.BlockUpdate(canonical, 0, canonical.Length);
-            return verifier.VerifySignature(signatureBytes);
+            return VerifyCanonical(root, publicKeyBytes, signatureBytes, "\n")
+                || VerifyCanonical(root, publicKeyBytes, signatureBytes, "\r\n");
         }
         catch (Exception exception) when (exception is JsonException
             or FormatException
@@ -64,5 +51,29 @@ public static class SignedManifestEd25519Verifier
         {
             return false;
         }
+    }
+
+    private static bool VerifyCanonical(
+        JsonObject root,
+        ReadOnlySpan<byte> publicKeyBytes,
+        byte[] signatureBytes,
+        string newLine)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions
+        {
+            Indented = true,
+            NewLine = newLine,
+            SkipValidation = false,
+        }))
+        {
+            root.WriteTo(writer);
+        }
+
+        byte[] canonical = stream.ToArray();
+        var verifier = new Ed25519Signer();
+        verifier.Init(forSigning: false, new Ed25519PublicKeyParameters(publicKeyBytes.ToArray(), 0));
+        verifier.BlockUpdate(canonical, 0, canonical.Length);
+        return verifier.VerifySignature(signatureBytes);
     }
 }

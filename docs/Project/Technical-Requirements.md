@@ -16,7 +16,7 @@ Seeded from `docs/Feature-Flag-Ecosystem-Planning-v0.1.md`.
 
 ## **TR-4 — Signing.**
 
-**TR-4 — Signing.** Manifests shall be signed with Ed25519. The public key shall be embedded in the SDK at build time. Key rotation requires a new SDK build; this is acceptable because builds are routine.
+**TR-4 — Signing.** Manifests shall be signed with Ed25519. The public key shall be embedded in the SDK at build time. Key rotation requires a new SDK build; this is acceptable because builds are routine. The signed JSON canonical form must define its UTF-8 newline bytes explicitly across Windows, Linux, and Android. New signatures use LF; verification accepts valid already-issued CRLF signatures during migration without changing signed fields, and rejects tampered content in either form.
 
 ## **TR-5 — Offline-first.**
 
