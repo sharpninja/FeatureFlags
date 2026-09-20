@@ -78,6 +78,7 @@ services:
       - ${FEATUREFLAGS_PUBLIC_KEY_PATH:?Set trusted public key path}:/etc/featureflags/public-key.ed25519:ro
     networks:
       - featureflags
+      - truckmate_gateway_featureflags
   admin:
     build:
       context: .
@@ -113,27 +114,6 @@ services:
     image: sharpninja-featureflags-admin:truckmate-prod
     networks:
       - featureflags
-  ngrok:
-    ports:
-      - 4040:4040
-    depends_on:
-      - admin
-      - distribution
-    environment: {}
-    image: sha256:e0e8a023113fec7423d0a11de19e220823c4e374caa73dc314661813c5310c5e
-    pull_policy: never
-    volumes:
-      - ./ngrok.yml:/etc/ngrok/ngrok.yml:ro
-      - ${FEATUREFLAGS_NGROK_CONFIG:?Set protected ngrok config path}:/etc/ngrok/credentials.yml:ro
-    networks:
-      - featureflags
-    command:
-      - start
-      - --all
-      - --config
-      - /etc/ngrok/ngrok.yml
-      - --config
-      - /etc/ngrok/credentials.yml
   sqlserver:
     ports:
       - 11433:1433
@@ -170,3 +150,6 @@ services:
 networks:
   featureflags:
     name: truckmate-featureflags-prod
+  truckmate_gateway_featureflags:
+    external: true
+    name: truckmate-gateway-featureflags
