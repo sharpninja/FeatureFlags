@@ -65,26 +65,17 @@
         string[] productIds = form.ProductScope
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        AdminRbacMetadata metadata = new(
-            "tenant-default",
-            "blazor-user",
-            productIds.Length == 0 ? new[] { SharpNinjaProductCatalog.TruckMate } : productIds,
-            new[] { AdminRoleNames.Editor });
-
-        FeatureFlagDraftMutation mutation = new(
-            form.FlagKey,
-            form.EnvironmentName,
-            productIds.Length == 0 ? new[] { SharpNinjaProductCatalog.TruckMate } : productIds,
-            form.ValueType,
-            form.DefaultValue,
-            Array.Empty<string>(),
-            form.Reason,
-            metadata);
-
         try
         {
-            FeatureFlagDraft draft = await Runtime.CreateDraftAsync(mutation).ConfigureAwait(false);
+            FeatureFlagDraft draft = await Runtime.CreateDraftAsync(
+                form.FlagKey, form.EnvironmentName,
+                productIds.Length == 0 ? new[] { SharpNinjaProductCatalog.TruckMate } : productIds,
+                form.ValueType, form.DefaultValue, Array.Empty<string>(), form.Reason);
             statusMessage = $"Created '{draft.FlagKey}' in '{draft.EnvironmentName}' at revision {draft.Revision}.";
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            statusMessage = ex.Message;
         }
         catch (InvalidOperationException ex)
         {

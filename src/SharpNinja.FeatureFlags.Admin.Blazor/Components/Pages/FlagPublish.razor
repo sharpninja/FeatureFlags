@@ -44,18 +44,15 @@
 
     private async Task SubmitAsync()
     {
-        AdminRbacMetadata metadata = new(
-            "tenant-default",
-            "blazor-user",
-            new[] { SharpNinjaProductCatalog.TruckMate },
-            new[] { AdminRoleNames.Publisher, AdminRoleNames.Editor });
-
-        FeatureFlagPublishAction action = new(form.FlagKey, form.EnvironmentName, form.Reason, metadata);
-
         try
         {
-            AdminAuditEntry entry = await Runtime.PublishAsync(action).ConfigureAwait(false);
+            AdminAuditEntry entry = await Runtime.PublishAsync(
+                form.FlagKey, form.EnvironmentName, form.Reason);
             statusMessage = $"Published sequence {entry.Sequence} for '{entry.FlagKey}' in '{entry.EnvironmentName}'.";
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            statusMessage = ex.Message;
         }
         catch (InvalidOperationException ex)
         {

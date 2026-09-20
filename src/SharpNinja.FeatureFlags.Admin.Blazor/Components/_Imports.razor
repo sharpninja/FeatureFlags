@@ -4,9 +4,11 @@
 @using Microsoft.AspNetCore.Components.Routing
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Authorization
 @using SharpNinja.FeatureFlags.Admin
 @using SharpNinja.FeatureFlags.Admin.Blazor
 @using SharpNinja.FeatureFlags.Admin.Blazor.Components
 @using SharpNinja.FeatureFlags.Admin.Blazor.Components.Layout
 @using SharpNinja.FeatureFlags.Admin.Blazor.Components.Pages
 @using SharpNinja.FeatureFlags.Admin.Blazor.Services
+@attribute [Authorize]

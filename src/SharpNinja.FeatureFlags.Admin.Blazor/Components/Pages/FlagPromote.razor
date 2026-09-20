@@ -50,23 +50,16 @@
 
     private async Task SubmitAsync()
     {
-        AdminRbacMetadata metadata = new(
-            "tenant-default",
-            "blazor-user",
-            new[] { SharpNinjaProductCatalog.TruckMate },
-            new[] { AdminRoleNames.Promoter, AdminRoleNames.Publisher });
-
-        FeatureFlagPromotionAction action = new(
-            form.FlagKey,
-            form.SourceEnvironmentName,
-            form.TargetEnvironmentName,
-            form.Reason,
-            metadata);
-
         try
         {
-            FeatureFlagDraft draft = await Runtime.PromoteAsync(action).ConfigureAwait(false);
+            FeatureFlagDraft draft = await Runtime.PromoteAsync(
+                form.FlagKey, form.SourceEnvironmentName,
+                form.TargetEnvironmentName, form.Reason);
             statusMessage = $"Promoted '{draft.FlagKey}' to '{draft.EnvironmentName}' at revision {draft.Revision}.";
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            statusMessage = ex.Message;
         }
         catch (InvalidOperationException ex)
         {

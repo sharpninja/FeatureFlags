@@ -1,4 +1,6 @@
 using Bunit;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -22,6 +24,8 @@ internal static class TestServices
         ctx.Services.AddSingleton<IOptions<AdminRuntimeOptions>>(Options.Create(options));
         ctx.Services.AddSingleton<IAdminRuntimeStore>(store);
         ctx.Services.AddSingleton<IAdminRbacAuthorizer, AllowAllAuthorizer>();
+        ctx.Services.AddSingleton<IAdminActorResolver, PageTestActorResolver>();
+        ctx.Services.AddSingleton<AuthenticationStateProvider, PageTestAuthenticationStateProvider>();
         ctx.Services.AddSingleton<IAdminRuntimeService>(sp =>
             new InMemoryAdminRuntimeService(
                 sp.GetRequiredService<IAdminRuntimeStore>(),
@@ -30,6 +34,19 @@ internal static class TestServices
         ctx.Services.AddScoped<AdminRuntimeAccessor>();
         return store;
     }
+}
+
+internal sealed class PageTestActorResolver : IAdminActorResolver
+{
+    public AdminActor Resolve(ClaimsPrincipal principal) =>
+        new("page-test", "Page Test", "tenant-1", ["truckmate"], [AdminRoleNames.Editor]);
+}
+
+internal sealed class PageTestAuthenticationStateProvider : AuthenticationStateProvider
+{
+    public override Task<AuthenticationState> GetAuthenticationStateAsync() =>
+        Task.FromResult(new AuthenticationState(new ClaimsPrincipal(
+            new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "page-test")], "test"))));
 }
 
 internal sealed class AllowAllAuthorizer : IAdminRbacAuthorizer

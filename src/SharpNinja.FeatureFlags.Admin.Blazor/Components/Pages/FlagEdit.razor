@@ -101,26 +101,16 @@
         string[] rules = (form.RuleDescriptions ?? string.Empty)
             .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-        AdminRbacMetadata metadata = new(
-            "tenant-default",
-            "blazor-user",
-            productIds,
-            new[] { AdminRoleNames.Editor });
-
-        FeatureFlagDraftMutation mutation = new(
-            form.FlagKey,
-            form.EnvironmentName,
-            productIds,
-            form.ValueType,
-            form.DefaultValue,
-            rules,
-            form.Reason,
-            metadata);
-
         try
         {
-            FeatureFlagDraft draft = await Runtime.UpdateDraftAsync(mutation).ConfigureAwait(false);
+            FeatureFlagDraft draft = await Runtime.UpdateDraftAsync(
+                form.FlagKey, form.EnvironmentName, productIds, form.ValueType,
+                form.DefaultValue, rules, form.Reason);
             statusMessage = $"Updated '{draft.FlagKey}' to revision {draft.Revision}.";
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            statusMessage = ex.Message;
         }
         catch (InvalidOperationException ex)
         {
