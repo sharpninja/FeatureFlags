@@ -4,6 +4,8 @@ Compile-time-scoped, offline-first feature flags for .NET 10. Flags are evaluate
 
 **Version:** 1.0.0 | **Frameworks:** `net10.0`, `net10.0-android`, `net10.0-windows10.0.19041.0`
 
+The Windows target is evaluated only on Windows build hosts. Linux builds evaluate the .NET and Android targets.
+
 ---
 
 ## Documentation
