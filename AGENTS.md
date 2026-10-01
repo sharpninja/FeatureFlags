@@ -71,7 +71,7 @@ On every subsequent user message:
 - `./build.ps1 ValidateConfig`
 - `./build.ps1 ValidateTraceability`
 
-The base target framework is .NET 10. SDK-facing libraries multi-target `net10.0`, `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, and `net10.0-windows10.0.19041.0`.
+The base target framework is .NET 10. SDK-facing libraries multi-target `net10.0`, `net10.0-android`, and `net10.0-windows10.0.19041.0`.
 
 ## Requirements Tracking
 

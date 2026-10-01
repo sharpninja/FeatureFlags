@@ -7,7 +7,7 @@ This guide walks you from NuGet installation to your first evaluated flag in a .
 | Requirement | Details |
 |---|---|
 | .NET SDK | 10.0 or later |
-| Supported platforms | `net10.0` (Linux, Windows), `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, `net10.0-windows10.0.19041.0` |
+| Supported platforms | `net10.0` (Linux and platform-neutral), `net10.0-android`, `net10.0-windows10.0.19041.0` |
 | Dependency injection | `Microsoft.Extensions.DependencyInjection` (any version compatible with .NET 10) |
 
 ## Installation

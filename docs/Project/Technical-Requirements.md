@@ -4,11 +4,11 @@ Seeded from `docs/Feature-Flag-Ecosystem-Planning-v0.1.md`.
 
 ## **TR-1 — Target frameworks.**
 
-**TR-1 — Target frameworks.** SDK targets `net10.0`, `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, `net10.0-windows10.0.19041.0`, and plain `net10.0` for Linux. Long-term support framework only; no .NET Framework support.
+**TR-1 - Target frameworks.** SDK targets `net10.0` for Linux and platform-neutral consumers, `net10.0-android`, and `net10.0-windows10.0.19041.0`. Long-term support framework only; no .NET Framework support.
 
 ## **TR-2 — AOT and trim safety.**
 
-**TR-2 — AOT and trim safety.** The SDK and rule evaluator shall be AOT-compatible (iOS, NativeAOT) and trim-safe. This forbids `Reflection.Emit`, dynamic expression compilation, and code generation at runtime. The evaluator shall be a tree-walking interpreter over parsed AST nodes.
+**TR-2 - AOT and trim safety.** The SDK and rule evaluator shall be NativeAOT-compatible and trim-safe. This forbids `Reflection.Emit`, dynamic expression compilation, and code generation at runtime. The evaluator shall be a tree-walking interpreter over parsed AST nodes.
 
 ## **TR-3 — Determinism across platforms.**
 

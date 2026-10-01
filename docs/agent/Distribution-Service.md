@@ -46,7 +46,7 @@ Fetch the current signed manifest for a product/release/environment.
 | `Authorization: Bearer <token>` | Yes (fallback) | Bearer token (used if both key headers absent). |
 | `If-None-Match` | No | ETag from a previous response. Returns 304 if unchanged. |
 | `X-SharpNinja-Device-Attestation` | Conditional | Device attestation token. Required if policy demands it. |
-| `X-SharpNinja-Device-Platform` | No | Platform hint (e.g., `iOS`, `Android`, `Windows`). |
+| `X-SharpNinja-Device-Platform` | No | Platform hint (e.g., `Android`, `Windows`, `Linux`). |
 
 **Response codes:**
 

@@ -263,14 +263,6 @@ strategy:
         os: ubuntu-latest
         framework: net10.0-android
         workloads: android
-      - platform: ios
-        os: macos-latest
-        framework: net10.0-ios
-        workloads: ios
-      - platform: maccatalyst
-        os: macos-latest
-        framework: net10.0-maccatalyst
-        workloads: maccatalyst
       - platform: windows
         os: windows-latest
         framework: net10.0-windows10.0.19041.0

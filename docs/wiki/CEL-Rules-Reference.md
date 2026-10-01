@@ -11,7 +11,7 @@ CEL was chosen over alternatives such as JSONLogic for the following reasons, do
 - **Formal grammar** - CEL has a complete published grammar. The parser produces a well-defined AST with deterministic precedence rules.
 - **Deterministic evaluation** - Given the same input, CEL always produces the same output. There is no implicit type coercion that can silently change outcomes between versions.
 - **Sandbox safety** - CEL expressions cannot perform I/O, allocate unbounded memory, or call arbitrary functions. The supported function set is closed and declared explicitly.
-- **AOT compatible** - The evaluator is a tree-walking interpreter over parsed AST nodes. It uses no `Reflection.Emit`, no dynamic code generation, and no runtime expression compilation. It is fully compatible with iOS AoT compilation and NativeAOT.
+- **AOT compatible** - The evaluator is a tree-walking interpreter over parsed AST nodes. It uses no `Reflection.Emit`, no dynamic code generation, and no runtime expression compilation. It is fully compatible with NativeAOT compilation.
 - **Sub-millisecond compile-and-cache** - Each expression is parsed once and cached by text. Subsequent evaluations skip parsing entirely.
 - **Proven scale** - CEL is production-proven in Kubernetes, Envoy, and Cloud Armor.
 

@@ -9,13 +9,13 @@
 
 ## 1. Purpose and Context
 
-This document captures the Planning-phase artifacts for a bespoke feature-flag ecosystem that supports producing **multiple adjacent products from a single .NET codebase** across **Android, Windows, iOS, macOS, and Linux**. It is the first iteration. Per the Byrd Process, requirements are expected to be refined as Implementation surfaces defects in this plan — that is a feature of the process, not a failure of it.
+This document captures the Planning-phase artifacts for a bespoke feature-flag ecosystem that supports producing **multiple adjacent products from a single .NET codebase** across **Android, Windows, and Linux**. It is the first iteration. Per the Byrd Process, requirements are expected to be refined as Implementation surfaces defects in this plan — that is a feature of the process, not a failure of it.
 
 ## 2. V² Assessment (Viable AND Valuable)
 
 **Valuable?** Yes. The constraint of shipping multiple adjacent products from one codebase creates a permanent need for two distinct kinds of variation: ship-time product identity (which features even exist in this binary) and run-time operational control (gradual rollout, kill switches, regional behavior, A/B experiments). Without a disciplined system, each new product multiplies branching complexity and each incident multiplies time-to-mitigate. A correctly designed flag ecosystem converts both classes of variation into data, where they can be reviewed, audited, and reverted without a redeploy.
 
-**Viable?** Yes, with caveats. The technical risks are bounded and known: AOT-safe expression evaluation on iOS, manifest signing and key rotation, trim-safe SDK packaging for MAUI, and disciplined offline-cache invalidation. None of these are research-grade problems; all have established solutions that we will adopt rather than invent. The product risk — that the team builds an admin plane no one uses — is mitigated by sequencing the iteration phases to deliver SDK + bundled defaults before any dashboard work.
+**Viable?** Yes, with caveats. The technical risks are bounded and known: AOT-safe expression evaluation under NativeAOT, manifest signing and key rotation, trim-safe SDK packaging for MAUI, and disciplined offline-cache invalidation. None of these are research-grade problems; all have established solutions that we will adopt rather than invent. The product risk — that the team builds an admin plane no one uses — is mitigated by sequencing the iteration phases to deliver SDK + bundled defaults before any dashboard work.
 
 **V² == true.** Proceed to detailed planning.
 
@@ -69,9 +69,9 @@ The system must, at minimum, do the following.
 
 ## 5. Non-Functional / Technical Requirements
 
-**TR-1 — Target frameworks.** SDK targets `net10.0`, `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, `net10.0-windows10.0.19041.0`, and plain `net10.0` for Linux. Long-term support framework only; no .NET Framework support.
+**TR-1 — Target frameworks.** SDK targets `net10.0` for Linux and platform-neutral consumers, `net10.0-android`, and `net10.0-windows10.0.19041.0`. Long-term support framework only; no .NET Framework support.
 
-**TR-2 — AOT and trim safety.** The SDK and rule evaluator shall be AOT-compatible (iOS, NativeAOT) and trim-safe. This forbids `Reflection.Emit`, dynamic expression compilation, and code generation at runtime. The evaluator shall be a tree-walking interpreter over parsed AST nodes.
+**TR-2 — AOT and trim safety.** The SDK and rule evaluator shall be NativeAOT-compatible and trim-safe. This forbids `Reflection.Emit`, dynamic expression compilation, and code generation at runtime. The evaluator shall be a tree-walking interpreter over parsed AST nodes.
 
 **TR-3 — Determinism across platforms.** Percentage bucketing shall use a fixed, platform-independent hash (recommend SipHash-2-4 of the concatenation of ProductId || ReleaseId || FlagKey || the bucketing-context value). Floating-point comparisons in rules shall use a documented epsilon or be forbidden entirely in v1.
 
@@ -149,7 +149,7 @@ public class CheckoutHandler(
 }
 ```
 
-**MAUI (Android / iOS / Windows / Mac Catalyst):**
+**MAUI (Android / Windows):**
 
 ```csharp
 // In MauiProgram.cs
@@ -176,7 +176,7 @@ OpenFeature's `Api.Instance` is a process-wide singleton that holds the active p
 
 ### 6.2 Rule Engine (`SharpNinja.FeatureFlags.Evaluation`)
 
-A pure library with no I/O. Takes a parsed Manifest and an Evaluation Context, returns a typed evaluation outcome. AOT-safe tree-walking interpreter over a parsed CEL AST. No `Reflection.Emit`, no `System.Linq.Expressions.Compile()`, no Roslyn — the AST is interpreted node-by-node, which is mandatory for iOS and NativeAOT and remains fast because rules are tiny and the AST is cached after the first parse.
+A pure library with no I/O. Takes a parsed Manifest and an Evaluation Context, returns a typed evaluation outcome. AOT-safe tree-walking interpreter over a parsed CEL AST. No `Reflection.Emit`, no `System.Linq.Expressions.Compile()`, no Roslyn — the AST is interpreted node-by-node, which is mandatory for NativeAOT and remains fast because rules are tiny and the AST is cached after the first parse.
 
 Exposed surface:
 
@@ -955,11 +955,11 @@ Within rules, `{ "==": [{ "var": "ProductId" }, "acme-pro" ] }` and `{ "semver_s
 
 Per the Byrd Process, TDD drives Implementation. The Testing Requirements artifact begins here.
 
-**Unit tests** shall exist for every public method of every component listed in section 6, written before implementation per TDD. The rule engine specifically requires a property-based test suite that asserts determinism: for any (Manifest, Context) pair, repeated evaluation yields identical results, and the same evaluation on Android, iOS, Windows, macOS, and Linux yields identical results.
+**Unit tests** shall exist for every public method of every component listed in section 6, written before implementation per TDD. The rule engine specifically requires a property-based test suite that asserts determinism: for any (Manifest, Context) pair, repeated evaluation yields identical results, and the same evaluation on Android, Windows, and Linux yields identical results.
 
 **Integration tests** shall cover at minimum: end-to-end Manifest fetch + verification + cache + evaluation against a stub Distribution service; offline boot using only bundled defaults; recovery from corrupt cache; signature-failure rejection; cache eviction under disk pressure; ProductScope enforcement; kill-switch propagation latency.
 
-**Cross-platform validation** shall run the integration test suite on a CI matrix covering all five platforms via .NET MAUI workloads and (for Linux) plain .NET 10.
+**Cross-platform validation** shall run the integration test suite on a CI matrix covering Android, Windows, and Linux using their supported .NET 10 targets.
 
 **Human validation** shall cover: admin-plane workflow usability with at least three operators; verification that a non-engineer can read and understand a rule before it is published; verification that a published kill-switch reaches a sample app on each platform within the documented SLA.
 
@@ -971,7 +971,7 @@ Sequencing prioritizes delivering value to the application teams *before* delive
 
 **Phase 1 — Build-time pipeline, bundled defaults, and flag-binding generators (5–7 weeks).** MSBuild integration; source generator for Product/Release stamping; embed-as-resource pipeline; `flagctl validate`; the §6.9 attribute set (`[FeatureFlag]`, `[FeatureFlagFallback]`, `[FeatureFlagVariant]`, `[FeatureFlagValue]`, `[FeatureFlagGate]`) in `SharpNinja.FeatureFlags.Abstractions`; the Roslyn incremental generators that emit DI registration extensions, partial-method gates, and partial-property accessors; the `SNFF0xxx` diagnostic set including expiration and sunsetting warnings. Output: an application can declare ProductId/ReleaseId, embed a default manifest, attribute classes and members with flag bindings, get compile-time diagnostics on flag-key typos and product-scope violations, and call a stub evaluator that returns the default.
 
-**Phase 2 — Evaluator and rule engine (3–4 weeks).** CEL parser, AST cache, tree-walking interpreter, the v1 custom-function table (`semver_satisfies`, `bucket`, `version_compare`), iteration-count limits on macros, full unit-test coverage including a property-based determinism suite. AOT verification on iOS and NativeAOT. Output: full rule evaluation against in-memory manifests; no network yet.
+**Phase 2 — Evaluator and rule engine (3–4 weeks).** CEL parser, AST cache, tree-walking interpreter, the v1 custom-function table (`semver_satisfies`, `bucket`, `version_compare`), iteration-count limits on macros, full unit-test coverage including a property-based determinism suite. NativeAOT verification. Output: full rule evaluation against in-memory manifests; no network yet.
 
 **Phase 3 — Distribution and remote override (3–4 weeks).** Distribution service, CDN integration, SDK fetcher, signature verification, on-disk cache, force-refresh path. Output: remote-driven flag changes reach apps and survive offline.
 
@@ -987,7 +987,7 @@ Each phase exits only when its unit tests, integration tests, and prior-phase re
 
 ## 12. Known Risks and Mitigations
 
-The iOS / AOT / dynamic-evaluation risk is mitigated by mandating a tree-walking interpreter — no IL emission, no Roslyn scripting, no runtime compilation. This is enforced by AOT-warning treat-as-error in CI.
+The AOT / dynamic-evaluation risk is mitigated by mandating a tree-walking interpreter — no IL emission, no Roslyn scripting, no runtime compilation. This is enforced by AOT-warning treat-as-error in CI.
 
 The trimming risk for MAUI is mitigated by shipping explicit trimming descriptors and including trim-mode validation in the SDK's own CI.
 

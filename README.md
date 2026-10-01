@@ -2,7 +2,7 @@
 
 Compile-time-scoped, offline-first feature flags for .NET 10. Flags are evaluated synchronously from a signed, versioned manifest embedded in the application binary. Remote refresh, exposure tracking, an Admin authoring plane, and a Distribution service are all included.
 
-**Version:** 1.0.0 | **Frameworks:** `net10.0`, `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`, `net10.0-windows10.0.19041.0`
+**Version:** 1.0.0 | **Frameworks:** `net10.0`, `net10.0-android`, `net10.0-windows10.0.19041.0`
 
 ---
 

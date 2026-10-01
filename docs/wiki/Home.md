@@ -2,7 +2,7 @@
 
 SharpNinja Feature Flags is a compile-time-scoped, offline-first feature flag SDK for .NET 10 applications. Flags are evaluated synchronously from a signed, versioned manifest embedded in the application binary. Remote refresh, exposure tracking, an Admin authoring plane, and a Distribution service are all included.
 
-**Current version:** 1.0.0 | **Target framework:** net10.0 (Android, iOS, Mac Catalyst, Windows)
+**Current version:** 1.0.0 | **Target framework:** net10.0 (Android, Windows, Linux)
 
 ---
 

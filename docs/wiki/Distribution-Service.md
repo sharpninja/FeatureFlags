@@ -248,7 +248,7 @@ Device attestation is optional. When `RequireDeviceAttestation` is `true`, every
 | Header | Description |
 |---|---|
 | `X-SharpNinja-Device-Attestation` | Opaque attestation token issued by the device's secure enclave or attestation provider |
-| `X-SharpNinja-Device-Platform` | Platform or provider identifier (for example, `android-play-integrity`, `ios-dcappcheck`) |
+| `X-SharpNinja-Device-Platform` | Platform or provider identifier (for example, `android-play-integrity`) |
 
 Test tokens can be pre-configured for development and CI environments:
 
