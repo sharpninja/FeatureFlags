@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../SharpNinja.FeatureFlags.Admin/SharpNinja.FeatureFlags.Admin.csproj" />
+    <ProjectReference Include="../SharpNinja.FeatureFlags.Admin.Data.Postgres/SharpNinja.FeatureFlags.Admin.Data.Postgres.csproj" />
+    <ProjectReference Include="../SharpNinja.FeatureFlags.Admin.IdentityServer.Postgres/SharpNinja.FeatureFlags.Admin.IdentityServer.Postgres.csproj" />
+  </ItemGroup>
+</Project>

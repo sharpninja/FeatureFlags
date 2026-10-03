@@ -1,6 +1,6 @@
 # Use Docker's bundled Dockerfile frontend.
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e1ffd2a92ae84c1291bc1b6887501f8af98e6331e7af6d4c8d37168c5e87a64c AS build
 WORKDIR /src
 
 COPY Directory.Packages.props ./
@@ -24,7 +24,7 @@ RUN rm src/SharpNinja.FeatureFlags.Admin/appsettings.json
 RUN find src -type d \( -name bin -o -name obj \) -prune -exec rm -rf {} +
 RUN dotnet publish src/SharpNinja.FeatureFlags.Admin.Blazor/SharpNinja.FeatureFlags.Admin.Blazor.csproj --configuration Release --framework net10.0 --output /app/publish /p:TargetFrameworks=net10.0 /p:UseAppHost=false /p:DisableGitVersionTask=true
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:1fa23fc4872d95fd71c2833ebe65d7e84a43b2d51a31d119516852f13d9505a7 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_URLS=http://+:8080 \
     DOTNET_EnableDiagnostics=0

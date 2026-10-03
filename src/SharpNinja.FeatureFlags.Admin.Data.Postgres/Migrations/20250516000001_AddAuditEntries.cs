@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -5,6 +6,8 @@ namespace SharpNinja.FeatureFlags.Admin.Data.Postgres.Migrations;
 
 /// <summary>FR-9 FR-11: Adds the AuditEntries table to the PostgreSQL admin schema.</summary>
 #pragma warning disable CA1062 // migrationBuilder nullability checked by EF Core caller
+[DbContext(typeof(PostgresAdminDbContext))]
+[Migration("20250516000001_AddAuditEntries")]
 public partial class AddAuditEntries : Migration
 {
     /// <inheritdoc />
