@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: src/SharpNinja.FeatureFlags.Admin.Blazor/Dockerfile
     ports:
-    - 127.0.0.1:18082:8080
+      - 127.0.0.1:18082:8080
     depends_on:
       admin:
         condition: service_started
@@ -23,18 +23,18 @@ services:
       FeatureFlags__Tenancy__Mode: MultiTenant
       AdminIdentityServer__ClientId: sharpninja-admin
       ASPNETCORE_URLS: http://+:8080
-      AdminIdentityServer__PublicIssuer: http://localhost:18080
+      AdminIdentityServer__PublicIssuer: http://localhost:18081
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:?Set protected PostgreSQL password}
       FeatureFlags__Products__0: truckmate
     image: ${FEATUREFLAGS_ADMIN_BLAZOR_IMAGE:?Set authenticated Admin Blazor image}
     networks:
-    - featureflags
+      - featureflags
   distribution:
     build:
       context: .
       dockerfile: src/SharpNinja.FeatureFlags.Distribution/Dockerfile
     ports:
-    - 7148:8080
+      - 7148:8080
     depends_on:
       sqlserver:
         condition: service_started
@@ -50,7 +50,7 @@ services:
       Distribution__ApiKeys__gigdriving__0: ${FEATUREFLAGS_GIGDRIVING_DISTRIBUTION_KEY:?Set protected distribution key}
       ASPNETCORE_URLS: http://+:8080
       FeatureFlags__ReleaseLineage__Mode: SemVerChannelBuild
-      AdminIdentityServer__PublicIssuer: http://localhost:18080
+      AdminIdentityServer__PublicIssuer: http://localhost:18081
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=featureflags;Username=featureflags;Password=${FEATUREFLAGS_POSTGRES_PASSWORD:?Set protected PostgreSQL password}
       AdminIdentityServer__Audience: sharpninja.admin.api
       AdminIdentityServer__Authority: http://admin:8080
@@ -74,17 +74,17 @@ services:
       Distribution__Cdn__ManifestStaleWhileRevalidateSeconds: "300"
     image: ${FEATUREFLAGS_DISTRIBUTION_IMAGE:?Set authenticated Distribution image}
     volumes:
-    - ${FEATUREFLAGS_DISTRIBUTION_ROOT:?Set desktop distribution root}:/data/distribution
-    - ${FEATUREFLAGS_PUBLIC_KEY_PATH:?Set trusted public key path}:/etc/featureflags/public-key.ed25519:ro
+      - ${FEATUREFLAGS_DISTRIBUTION_ROOT:?Set desktop distribution root}:/data/distribution
+      - ${FEATUREFLAGS_PUBLIC_KEY_PATH:?Set trusted public key path}:/etc/featureflags/public-key.ed25519:ro
     networks:
-    - featureflags
-    - truckmate_gateway_featureflags
+      - featureflags
+      - truckmate_gateway_featureflags
   admin:
     build:
       context: .
       dockerfile: src/SharpNinja.FeatureFlags.Admin/Dockerfile
     ports:
-    - 127.0.0.1:18080:8080
+      - 127.0.0.1:18081:8080
     depends_on:
       sqlserver:
         condition: service_started
@@ -94,7 +94,7 @@ services:
       ConnectionStrings__SqlServer: Server=sqlserver,1433;Database=FeatureFlags;User Id=sa;Password=${FEATUREFLAGS_SQLSERVER_PASSWORD:?Set protected SQL Server password};Encrypt=True;TrustServerCertificate=True
       AdminIdentityServer__Audience: sharpninja.admin.api
       AdminIdentityServer__PostLogoutRedirectUris__0: http://admin-blazor:8080/signout-callback-oidc
-      AdminIdentityServer__PublicIssuer: http://localhost:18080
+      AdminIdentityServer__PublicIssuer: http://localhost:18081
       FeatureFlags__Products__1: drivermate
       AdminIdentityServer__PostLogoutRedirectUris__1: http://localhost:18082/signout-callback-oidc
       AdminIdentityServer__RedirectUris__1: http://localhost:18082/signin-oidc
@@ -115,12 +115,12 @@ services:
       AdminIdentityServer__SigningCertificate__Password: ${FEATUREFLAGS_ADMIN_SIGNING_CERTIFICATE_PASSWORD:?Set protected signing certificate password}
     image: ${FEATUREFLAGS_ADMIN_IMAGE:?Set authenticated Admin image}
     networks:
-    - featureflags
+      - featureflags
     volumes:
-    - ${FEATUREFLAGS_ADMIN_SIGNING_CERTIFICATE_PATH:?Set protected signing certificate path}:/etc/featureflags/admin-signing.pfx:ro
+      - ${FEATUREFLAGS_ADMIN_SIGNING_CERTIFICATE_PATH:?Set protected signing certificate path}:/etc/featureflags/admin-signing.pfx:ro
   sqlserver:
     ports:
-    - 127.0.0.1:11433:1433
+      - 127.0.0.1:11433:1433
     environment:
       MSSQL_SA_PASSWORD: ${FEATUREFLAGS_SQLSERVER_PASSWORD:?Set protected SQL Server password}
       ACCEPT_EULA: "Y"
@@ -128,12 +128,12 @@ services:
     image: mcr.microsoft.com/mssql/server:2025-latest@sha256:2b5b581621126574f3d1f75e78d3eebe8d05aedb59ad0cfdf9aa42cb0634d726
     pull_policy: never
     volumes:
-    - featureflags-sqlserver:/var/opt/mssql
+      - featureflags-sqlserver:/var/opt/mssql
     networks:
-    - featureflags
+      - featureflags
   postgres:
     ports:
-    - 127.0.0.1:15432:5432
+      - 127.0.0.1:15432:5432
     environment:
       POSTGRES_DB: featureflags
       POSTGRES_USER: featureflags
@@ -141,14 +141,14 @@ services:
     image: postgres:17@sha256:e38411452a464af89e5adadb8d223bf53b898d47d6ef918b2d58c08707350449
     pull_policy: never
     volumes:
-    - featureflags-postgres:/var/lib/postgresql/data
+      - featureflags-postgres:/var/lib/postgresql/data
     networks:
-    - featureflags
+      - featureflags
     healthcheck:
       interval: 10s
       test:
-      - CMD-SHELL
-      - pg_isready -U featureflags -d featureflags
+        - CMD-SHELL
+        - pg_isready -U featureflags -d featureflags
       timeout: 5s
       retries: 10
 networks:
